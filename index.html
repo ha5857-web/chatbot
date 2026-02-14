@@ -152,8 +152,47 @@ async function sendMessage() {
     if (result) {
         addMessage(result.answer, 'bot', result.videoLink);
     } else {
-        addMessage('죄송합니다. 관련 정보를 찾을 수 없습니다.\n다른 방식으로 질문해보시거나, 더 구체적으로 질문해주세요.', 'bot');
+        // 비슷한 질문 찾기
+        const suggestions = findSimilarQuestions(question);
+        let message = '죄송합니다. 정확히 일치하는 정보를 찾을 수 없습니다.\n\n';
+        if (suggestions.length > 0) {
+            message += '혹시 이런 질문을 찾으시나요?\n\n';
+            suggestions.forEach((q, idx) => {
+                message += `${idx + 1}. ${q}\n`;
+            });
+            message += '\n위 질문 중 하나를 입력해보세요!';
+        } else {
+            message += '다른 방식으로 질문해보시거나, 더 구체적으로 질문해주세요.';
+        }
+        addMessage(message, 'bot');
     }
+}
+
+function findSimilarQuestions(question) {
+    const lowerQuestion = question.toLowerCase();
+    const suggestions = [];
+    
+    // 주요 키워드 추출
+    const keywords = ['성조숙증', '성장호르몬', '소아비만', '키', '저신장', '비만'];
+    let mainKeyword = '';
+    
+    for (const keyword of keywords) {
+        if (lowerQuestion.includes(keyword)) {
+            mainKeyword = keyword;
+            break;
+        }
+    }
+    
+    if (mainKeyword) {
+        // 해당 키워드가 포함된 질문 찾기
+        for (const record of allRecords) {
+            if (record.질문.includes(mainKeyword) && suggestions.length < 3) {
+                suggestions.push(record.질문);
+            }
+        }
+    }
+    
+    return suggestions;
 }
 
 function findAnswer(question) {
