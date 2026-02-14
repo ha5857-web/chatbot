@@ -152,7 +152,6 @@ async function sendMessage() {
     if (result) {
         addMessage(result.answer, 'bot', result.videoLink);
     } else {
-        // 비슷한 질문 찾기
         const suggestions = findSimilarQuestions(question);
         let message = '죄송합니다. 정확히 일치하는 정보를 찾을 수 없습니다.\n\n';
         if (suggestions.length > 0) {
@@ -171,66 +170,142 @@ async function sendMessage() {
 function findSimilarQuestions(question) {
     const lowerQuestion = question.toLowerCase();
     const suggestions = [];
-    
-    // 주요 키워드 추출
     const keywords = ['성조숙증', '성장호르몬', '소아비만', '키', '저신장', '비만'];
     let mainKeyword = '';
-    
     for (const keyword of keywords) {
         if (lowerQuestion.includes(keyword)) {
             mainKeyword = keyword;
             break;
         }
     }
-    
     if (mainKeyword) {
-        // 해당 키워드가 포함된 질문 찾기
         for (const record of allRecords) {
             if (record.질문.includes(mainKeyword) && suggestions.length < 3) {
                 suggestions.push(record.질문);
             }
         }
     }
-    
     return suggestions;
+}
+
+function findExactMatch(targetQuestion) {
+    for (const record of allRecords) {
+        if (record.질문 === targetQuestion) {
+            return {
+                answer: record.답변 || '답변 정보가 없습니다.',
+                videoLink: record.영상링크,
+                question: record.질문
+            };
+        }
+    }
+    return null;
 }
 
 function findAnswer(question) {
     const lowerQuestion = question.toLowerCase();
     const cleanQuestion = lowerQuestion.replace(/\s/g, '');
+    const categoryKeywords = {
+        '성장호르몬_기초': ['성장호르몬은', '성장호르몬이', '어디에서', 'igf', '뇌하수체', '시상하부', '분비'],
+        '성장호르몬_치료': ['성장호르몬치료', '성장호르몬주사', '주사', '치료기간', '치료효과', '제형'],
+        '성장호르몬_부작용': ['부작용', '주사부위', '통증', '두통', '안전'],
+        '성조숙증_진단': ['성조숙증진단', '성조숙증검사', 'mri', '초음파', 'gnrh', '자극검사'],
+        '성조숙증_치료': ['성조숙증치료', '지엔알에이치', 'gnrh작용제', '성조숙증주사'],
+        '조기_유방발육증': ['조기유방', '가슴멍울', '유방발달', '멍울', '가슴'],
+        '소아비만': ['소아비만', 'bmi', '비만', '체질량지수', '살', '체중', '뚱뚱', '과체중', '지방간', '당뇨'],
+        '저신장': ['저신장', '키가작', '3백분위', '키작', '특발성'],
+        '영양_비타민': ['비타민', '영양', '칼슘', '아연', '철분', '단백질', '영양제'],
+        '식습관': ['식단', '간식', '음식', '먹', '식사', '야식'],
+        '운동': ['운동', '스트레칭', '체육', '근력', '농구', '수영'],
+        '수면': ['수면', '잠', '늦게자', '재워', '자야', '수면시간'],
+        '검사_비용': ['검사', '비용', '보험', '급여', '가격', '본인부담'],
+        '골연령_성장판': ['골연령', '뼈나이', '손엑스레이', '성장판'],
+        '키_예측_백분위': ['키예측', '최종키', '성인키', '부모키', '백분위', '성장곡선'],
+        '일반_성장': ['성장', '키', '크', '자라', '성장속도', '1년', '센티', 'cm'],
+        '측정_방법': ['재는', '측정', '키재', '정확'],
+        '호르몬_기타': ['갑상선', '코티솔', '테스토스테론', '에스트로겐']
+    };
+    const questionMappings = {
+        '8센티': '아이가 1년에 얼마나 커야 정상인가요?',
+        '8cm': '아이가 1년에 얼마나 커야 정상인가요?',
+        '10센티': '아이가 1년에 얼마나 커야 정상인가요?',
+        '10cm': '아이가 1년에 얼마나 커야 정상인가요?',
+        '1년에몇': '아이가 1년에 얼마나 커야 정상인가요?',
+        '얼마나커': '아이가 1년에 얼마나 커야 정상인가요?',
+        '성장속도': '우리 아이 성장 속도, 어떻게 확인하나요?',
+        '급성장': '아이가 1년에 얼마나 커야 정상인가요?',
+        '가슴멍울': '만 두 살인데 가슴에 멍울이 잡혔어요. 성조숙증인가요?',
+        '가슴몽우리': '만 두 살인데 가슴에 멍울이 잡혔어요. 성조숙증인가요?',
+        '2차성징': '조기 유방 발육증과 성조숙증은 어떻게 구별하나요?',
+        '사춘기빨리': '조기 유방 발육증과 성조숙증은 어떻게 구별하나요?',
+        '성조숙증증상': '조기 유방 발육증과 성조숙증은 어떻게 구별하나요?',
+        '유방발달': '만 두 살인데 가슴에 멍울이 잡혔어요. 성조숙증인가요?',
+        '키작': '특발성 저신장이란 무엇이며, 치료가 필요한가요?',
+        '키가작': '특발성 저신장이란 무엇이며, 치료가 필요한가요?',
+        '살찜': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
+        '살쪘': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
+        '뚱뚱': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
+        '성장호르몬언제': '성장호르몬은 언제 가장 많이 나오나요?',
+        '검사받': '3백분위 미만 또는 연간 성장 속도가 4cm 미만이면 어떤 검사를 받아야 하나요?',
+        '병원가': '6살 아이가 1년에 4cm도 안 자랐는데 병원에 가야 하나요?'
+    };
+    for (const [pattern, mappedQuestion] of Object.entries(questionMappings)) {
+        if (cleanQuestion.includes(pattern)) {
+            console.log('✓ 직접 매핑:', pattern, '→', mappedQuestion);
+            const mappedResult = findExactMatch(mappedQuestion);
+            if (mappedResult) {
+                return mappedResult;
+            }
+        }
+    }
+    let userCategory = null;
+    let maxScore = 0;
+    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+        let score = 0;
+        for (const keyword of keywords) {
+            if (lowerQuestion.includes(keyword)) {
+                score += 1;
+            }
+        }
+        if (score > maxScore) {
+            maxScore = score;
+            userCategory = category;
+        }
+    }
+    console.log('파악된 카테고리:', userCategory, '(점수:', maxScore + ')');
     let bestMatch = null;
     let bestScore = 0;
-    
     for (const record of allRecords) {
         const dbQuestion = (record.질문 || '').toLowerCase();
         const cleanDbQuestion = dbQuestion.replace(/\s/g, '');
         const keywords = (record.키워드 || '').toLowerCase();
         const tags = (record.태그 || '').toLowerCase();
-        
+        if (userCategory) {
+            let recordInCategory = false;
+            const categoryKws = categoryKeywords[userCategory] || [];
+            for (const kw of categoryKws) {
+                if (dbQuestion.includes(kw) || keywords.includes(kw)) {
+                    recordInCategory = true;
+                    break;
+                }
+            }
+            if (!recordInCategory) {
+                continue;
+            }
+        }
         let score = 0;
-        
-        // 1. 질문 완전 일치 (최고 점수)
         if (cleanDbQuestion === cleanQuestion) {
             score = 1000;
-        }
-        // 2. 질문 포함 관계 (높은 점수)
-        else if (cleanDbQuestion.includes(cleanQuestion)) {
+        } else if (cleanDbQuestion.includes(cleanQuestion)) {
             score = 500;
-        }
-        else if (cleanQuestion.includes(cleanDbQuestion)) {
+        } else if (cleanQuestion.includes(cleanDbQuestion)) {
             score = 400;
-        }
-        // 3. 주요 키워드 매칭 (중간 점수)
-        else {
-            // 성조숙증, 성장호르몬, 소아비만 등 주요 키워드 확인
+        } else {
             const mainKeywords = ['성조숙증', '성장호르몬', '소아비만', '키', '비만', '성장', '저신장'];
             for (const mainKey of mainKeywords) {
                 if (lowerQuestion.includes(mainKey) && dbQuestion.includes(mainKey)) {
                     score += 200;
                 }
             }
-            
-            // 일반 키워드 매칭
             const keywordList = keywords.split(',').map(k => k.trim());
             for (const keyword of keywordList) {
                 if (keyword && keyword.length > 1) {
@@ -239,8 +314,6 @@ function findAnswer(question) {
                     }
                 }
             }
-            
-            // 태그 매칭
             const tagList = tags.split('#').map(t => t.trim()).filter(t => t);
             for (const tag of tagList) {
                 if (tag && lowerQuestion.includes(tag)) {
@@ -248,7 +321,6 @@ function findAnswer(question) {
                 }
             }
         }
-        
         if (score > bestScore) {
             bestScore = score;
             bestMatch = { 
@@ -258,8 +330,7 @@ function findAnswer(question) {
             };
         }
     }
-    
-    console.log('검색어:', question, '/ 최고점수:', bestScore, '/ 매칭된 질문:', bestMatch?.question);
+    console.log('검색어:', question, '/ 카테고리:', userCategory, '/ 최고점수:', bestScore, '/ 매칭:', bestMatch?.question);
     return bestScore >= 50 ? bestMatch : null;
 }
 
