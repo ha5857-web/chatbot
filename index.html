@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>소아성장 AI 챗봇</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh; display: flex; justify-content: center; align-items: center;
+        }
+        .chatbot-container {
+            width: 90%; max-width: 500px; height: 90vh; max-height: 700px;
+            background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #00B050 0%, #00d561 100%);
+            color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .chat-header h1 { font-size: 20px; margin-bottom: 5px; }
+        .chat-header p { font-size: 12px; opacity: 0.9; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa; }
+        .message { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .user-message { align-items: flex-end; }
+        .bot-message { align-items: flex-start; }
+        .message-bubble {
+            max-width: 80%; padding: 12px 16px; border-radius: 18px;
+            word-wrap: break-word; line-height: 1.5;
+        }
+        .user-message .message-bubble {
+            background: #007bff; color: white; border-bottom-right-radius: 4px;
+        }
+        .bot-message .message-bubble {
+            background: white; color: #333; border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .video-button {
+            display: inline-block; margin-top: 10px; padding: 10px 20px;
+            background: #FF0000; color: white; text-decoration: none;
+            border-radius: 20px; font-size: 14px; transition: background 0.3s;
+        }
+        .video-button:hover { background: #cc0000; }
+        .chat-input-container {
+            padding: 15px; background: white; border-top: 1px solid #e0e0e0;
+            display: flex; gap: 10px;
+        }
+        .chat-input {
+            flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0;
+            border-radius: 25px; font-size: 14px; outline: none; transition: border 0.3s;
+        }
+        .chat-input:focus { border-color: #00B050; }
+        .send-button {
+            padding: 12px 24px; background: #00B050; color: white; border: none;
+            border-radius: 25px; font-size: 14px; cursor: pointer; transition: background 0.3s;
+        }
+        .send-button:hover { background: #009040; }
+        .send-button:active { transform: scale(0.95); }
+        .loading { display: none; text-align: center; padding: 10px; color: #666; }
+        .loading.show { display: block; }
+        .welcome-message { text-align: center; padding: 40px 20px; color: #666; }
+        .welcome-message h2 { color: #00B050; margin-bottom: 10px; }
+        .example-questions { margin-top: 20px; text-align: left; }
+        .example-questions h3 { font-size: 14px; color: #666; margin-bottom: 10px; }
+        .example-question {
+            background: white; padding: 10px 15px; margin: 8px 0; border-radius: 10px;
+            cursor: pointer; font-size: 13px; color: #333; transition: background 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .example-question:hover { background: #f0f0f0; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+</head>
+<body>
+<div class="chatbot-container">
+    <div class="chat-header">
+        <h1>🏥 소아성장 AI 챗봇</h1>
+        <p>성장호르몬・성조숙증・소아비만 전문</p>
+    </div>
+    <div class="chat-messages" id="messages">
+        <div class="welcome-message">
+            <h2>안녕하세요! 👋</h2>
+            <p>소아 성장과 비만에 대해<br>궁금한 점을 질문해주세요!</p>
+            <div class="example-questions">
+                <h3>💡 이런 질문을 해보세요:</h3>
+                <div class="example-question" onclick="sendExampleQuestion('성장호르몬은 언제 나오나요?')">
+                    성장호르몬은 언제 나오나요?
+                </div>
+                <div class="example-question" onclick="sendExampleQuestion('키가 작은데 검사 받아야 하나요?')">
+                    키가 작은데 검사 받아야 하나요?
+                </div>
+                <div class="example-question" onclick="sendExampleQuestion('성조숙증 증상이 뭔가요?')">
+                    성조숙증 증상이 뭔가요?
+                </div>
+                <div class="example-question" onclick="sendExampleQuestion('소아비만 식단 관리')">
+                    소아비만 식단 어떻게 관리하나요?
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="loading" id="loading">답변을 찾고 있습니다...</div>
+    <div class="chat-input-container">
+        <input type="text" class="chat-input" id="userInput" placeholder="궁금한 점을 입력하세요..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button class="send-button" onclick="sendMessage()">전송</button>
+    </div>
+</div>
+<script>
+let allRecords = [];
+let isFirstMessage = true;
+
+window.addEventListener('load', async function() {
+    console.log('데이터 로딩 시작...');
+    try {
+        const response = await fetch('chatbot_data.json');
+        if (!response.ok) throw new Error('데이터 로드 실패');
+        allRecords = await response.json();
+        console.log(`✓ ${allRecords.length}개 데이터 로드 완료`);
+    } catch (error) {
+        console.error('데이터 로드 실패:', error);
+        alert('데이터를 불러오는데 실패했습니다.');
+    }
+});
+
+function sendExampleQuestion(question) {
+    document.getElementById('userInput').value = question;
+    sendMessage();
+}
+
+async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const question = input.value.trim();
+    if (!question) return;
+    if (allRecords.length === 0) {
+        alert('데이터를 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+        return;
+    }
+    if (isFirstMessage) {
+        const welcome = document.querySelector('.welcome-message');
+        if (welcome) welcome.remove();
+        isFirstMessage = false;
+    }
+    addMessage(question, 'user');
+    input.value = '';
+    document.getElementById('loading').classList.add('show');
+    const result = findAnswer(question);
+    document.getElementById('loading').classList.remove('show');
+    if (result) {
+        addMessage(result.answer, 'bot', result.videoLink);
+    } else {
+        addMessage('죄송합니다. 관련 정보를 찾을 수 없습니다.\n다른 방식으로 질문해보시거나, 더 구체적으로 질문해주세요.', 'bot');
+    }
+}
+
+function findAnswer(question) {
+    const lowerQuestion = question.toLowerCase().replace(/\s/g, '');
+    let bestMatch = null;
+    let bestScore = 0;
+    for (const record of allRecords) {
+        const dbQuestion = (record.질문 || '').toLowerCase().replace(/\s/g, '');
+        const keywords = (record.키워드 || '').toLowerCase();
+        let score = 0;
+        if (dbQuestion === lowerQuestion) {
+            score = 100;
+        } else if (dbQuestion.includes(lowerQuestion) || lowerQuestion.includes(dbQuestion)) {
+            score = 80;
+        } else {
+            const keywordList = keywords.split(',').map(k => k.trim());
+            for (const keyword of keywordList) {
+                if (keyword && lowerQuestion.includes(keyword.replace(/\s/g, ''))) {
+                    score += 30;
+                }
+            }
+        }
+        if (score > bestScore) {
+            bestScore = score;
+            bestMatch = { answer: record.답변 || '답변 정보가 없습니다.', videoLink: record.영상링크 };
+        }
+    }
+    return bestScore >= 30 ? bestMatch : null;
+}
+
+function addMessage(text, type, videoLink = null) {
+    const messages = document.getElementById('messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}-message`;
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.textContent = text;
+    messageDiv.appendChild(bubble);
+    if (videoLink && type === 'bot' && videoLink !== 'nan') {
+        const videoBtn = document.createElement('a');
+        videoBtn.className = 'video-button';
+        videoBtn.href = videoLink;
+        videoBtn.target = '_blank';
+        videoBtn.innerHTML = '📺 영상으로 보기';
+        bubble.appendChild(document.createElement('br'));
+        bubble.appendChild(videoBtn);
+    }
+    messages.appendChild(messageDiv);
+    messages.scrollTop = messages.scrollHeight;
+}
+</script>
+</body>
+</html>
