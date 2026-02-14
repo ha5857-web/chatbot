@@ -157,31 +157,71 @@ async function sendMessage() {
 }
 
 function findAnswer(question) {
-    const lowerQuestion = question.toLowerCase().replace(/\s/g, '');
+    const lowerQuestion = question.toLowerCase();
+    const cleanQuestion = lowerQuestion.replace(/\s/g, '');
     let bestMatch = null;
     let bestScore = 0;
+    
     for (const record of allRecords) {
-        const dbQuestion = (record.질문 || '').toLowerCase().replace(/\s/g, '');
+        const dbQuestion = (record.질문 || '').toLowerCase();
+        const cleanDbQuestion = dbQuestion.replace(/\s/g, '');
         const keywords = (record.키워드 || '').toLowerCase();
+        const tags = (record.태그 || '').toLowerCase();
+        
         let score = 0;
-        if (dbQuestion === lowerQuestion) {
-            score = 100;
-        } else if (dbQuestion.includes(lowerQuestion) || lowerQuestion.includes(dbQuestion)) {
-            score = 80;
-        } else {
+        
+        // 1. 질문 완전 일치 (최고 점수)
+        if (cleanDbQuestion === cleanQuestion) {
+            score = 1000;
+        }
+        // 2. 질문 포함 관계 (높은 점수)
+        else if (cleanDbQuestion.includes(cleanQuestion)) {
+            score = 500;
+        }
+        else if (cleanQuestion.includes(cleanDbQuestion)) {
+            score = 400;
+        }
+        // 3. 주요 키워드 매칭 (중간 점수)
+        else {
+            // 성조숙증, 성장호르몬, 소아비만 등 주요 키워드 확인
+            const mainKeywords = ['성조숙증', '성장호르몬', '소아비만', '키', '비만', '성장', '저신장'];
+            for (const mainKey of mainKeywords) {
+                if (lowerQuestion.includes(mainKey) && dbQuestion.includes(mainKey)) {
+                    score += 200;
+                }
+            }
+            
+            // 일반 키워드 매칭
             const keywordList = keywords.split(',').map(k => k.trim());
             for (const keyword of keywordList) {
-                if (keyword && lowerQuestion.includes(keyword.replace(/\s/g, ''))) {
+                if (keyword && keyword.length > 1) {
+                    if (lowerQuestion.includes(keyword)) {
+                        score += 50;
+                    }
+                }
+            }
+            
+            // 태그 매칭
+            const tagList = tags.split('#').map(t => t.trim()).filter(t => t);
+            for (const tag of tagList) {
+                if (tag && lowerQuestion.includes(tag)) {
                     score += 30;
                 }
             }
         }
+        
         if (score > bestScore) {
             bestScore = score;
-            bestMatch = { answer: record.답변 || '답변 정보가 없습니다.', videoLink: record.영상링크 };
+            bestMatch = { 
+                answer: record.답변 || '답변 정보가 없습니다.', 
+                videoLink: record.영상링크,
+                question: record.질문
+            };
         }
     }
-    return bestScore >= 30 ? bestMatch : null;
+    
+    console.log('검색어:', question, '/ 최고점수:', bestScore, '/ 매칭된 질문:', bestMatch?.question);
+    return bestScore >= 50 ? bestMatch : null;
 }
 
 function addMessage(text, type, videoLink = null) {
