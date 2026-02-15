@@ -3,179 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>소아성장 AI 챗봇 - 개선 버전</title>
+    <title>소아성장 AI 챗봇 - v3.0</title>
     <style>
-        /* 기존 디자인 스타일 유지 */
+        /* [스타일 설정] 기존 디자인을 유지하면서 모바일 최적화를 강화했습니다. */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh; display: flex; justify-content: center; align-items: center;
-        }
-        .chatbot-container {
-            width: 90%; max-width: 500px; height: 90vh; max-height: 700px;
-            background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-        .chat-header {
-            background: linear-gradient(135deg, #00B050 0%, #00d561 100%);
-            color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .chat-header h1 { font-size: 20px; margin-bottom: 5px; }
-        .version-badge { 
-            background: rgba(255,255,255,0.2); 
-            padding: 4px 12px; border-radius: 12px; font-size: 11px; display: inline-block; margin-top: 5px;
-        }
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa; }
-        .message { margin-bottom: 15px; display: flex; flex-direction: column; }
-        .user-message { align-items: flex-end; }
-        .bot-message { align-items: flex-start; }
-        .message-bubble {
-            max-width: 80%; padding: 12px 16px; border-radius: 18px;
-            word-wrap: break-word; line-height: 1.5; white-space: pre-wrap;
-        }
-        .user-message .message-bubble { background: #007bff; color: white; border-bottom-right-radius: 4px; }
-        .bot-message .message-bubble { background: white; color: #333; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .video-button {
-            display: inline-block; margin-top: 10px; padding: 10px 20px;
-            background: #FF0000; color: white; text-decoration: none;
-            border-radius: 20px; font-size: 14px; transition: background 0.3s;
-        }
-        .chat-input-container { padding: 15px; background: white; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; }
-        .chat-input { flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 25px; outline: none; }
-        .chat-input:focus { border-color: #00B050; }
-        .send-button { padding: 12px 24px; background: #00B050; color: white; border: none; border-radius: 25px; cursor: pointer; }
-        .loading { display: none; text-align: center; padding: 10px; color: #666; font-size: 13px; }
-        .loading.show { display: block; }
+        body { font-family: 'Noto Sans KR', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .chatbot-container { width: 100%; max-width: 500px; height: 100vh; background: white; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .chat-header { background: #00B050; color: white; padding: 20px; text-align: center; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .message-bubble { max-width: 85%; padding: 12px 16px; border-radius: 15px; line-height: 1.6; font-size: 15px; }
+        .bot-message { align-self: flex-start; background: #e9ecef; color: #333; }
+        .user-message { align-self: flex-end; background: #00B050; color: white; }
+        .video-button { display: block; margin-top: 10px; padding: 10px; background: #ff0000; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; }
+        .input-area { padding: 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; outline: none; }
+        button { padding: 10px 20px; background: #00B050; color: white; border: none; border-radius: 25px; cursor: pointer; }
     </style>
 </head>
 <body>
-<div class="chatbot-container">
-    <div class="chat-header">
-        <h1>🏥 소아성장 AI 챗봇</h1>
-        <p>성장호르몬・성조숙증 전문</p>
-        <div class="version-badge">✨ 매핑 최적화 버전 v3.0</div>
-    </div>
-    <div class="chat-messages" id="messages">
+    <div class="chatbot-container">
+        <div class="chat-header">
+            <h2>🏥 소아성장 AI 챗봇</h2>
+            <small>무엇이든 물어보세요!</small>
         </div>
-    <div class="loading" id="loading">답변을 찾는 중입니다...</div>
-    <div class="chat-input-container">
-        <input type="text" class="chat-input" id="userInput" placeholder="비타민, 성조숙증 등 궁금한 점을 입력하세요..." onkeypress="if(event.key==='Enter') sendMessage()">
-        <button class="send-button" onclick="sendMessage()">전송</button>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="질문을 입력하세요..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">전송</button>
+        </div>
     </div>
-</div>
 
-<script>
-let allRecords = [];
+    <script>
+        let chatbotData = [];
 
-// 1. 데이터 로드 (Airtable에서 추출한 chatbot_data.json 활용)
-window.addEventListener('load', async function() {
-    try {
-        const response = await fetch('chatbot_data.json');
-        if (!response.ok) throw new Error('데이터 로드 실패');
-        allRecords = await response.json();
-        addMessage("안녕하세요! 소아 성장과 성조숙증에 대해 무엇이든 물어보세요. 😊", 'bot');
-    } catch (error) {
-        console.error('Error:', error);
-        addMessage("데이터를 불러오지 못했습니다. 파일명을 확인해주세요.", 'bot');
-    }
-});
-
-// 2. 메시지 전송 로직
-async function sendMessage() {
-    const input = document.getElementById('userInput');
-    const question = input.value.trim();
-    if (!question || allRecords.length === 0) return;
-
-    addMessage(question, 'user');
-    input.value = '';
-    document.getElementById('loading').classList.add('show');
-
-    // 0.5초 후 답변 생성 (자연스러운 연출)
-    setTimeout(() => {
-        const result = findBestMatch(question);
-        document.getElementById('loading').classList.remove('show');
-
-        if (result) {
-            addMessage(result.answer, 'bot', result.videoLink);
-        } else {
-            addMessage("죄송합니다. 정확한 정보를 찾을 수 없습니다.\n'비타민', '성조숙증 검사', '성장호르몬 주사' 등 핵심 단어로 질문해보시겠어요?", 'bot');
-        }
-    }, 500);
-}
-
-// 3. 핵심 검색 알고리즘 (Airtable 필드 기반 매핑)
-function findBestMatch(userInput) {
-    const cleanInput = userInput.toLowerCase().replace(/\s/g, ""); 
-    let bestMatch = null;
-    let maxScore = 0;
-
-    allRecords.forEach(record => {
-        let score = 0;
-        
-        // 가중치 1: 질문 필드와 포함 관계 (60점)
-        const dbQuestion = record.질문.toLowerCase().replace(/\s/g, "");
-        if (cleanInput.includes(dbQuestion) || dbQuestion.includes(cleanInput)) {
-            score += 60;
+        // 1. Airtable 데이터 로드
+        async function loadData() {
+            try {
+                const response = await fetch('chatbot_data.json');
+                chatbotData = await response.json();
+                addMessage("안녕하세요! 궁금한 점을 입력해 주세요. (예: 비타민, 성조숙증 등)", 'bot');
+            } catch (e) {
+                addMessage("데이터 로드에 실패했습니다. chatbot_data.json 파일을 확인해 주세요.", 'bot');
+            }
         }
 
-        // 가중치 2: 키워드 필드 매칭 (개당 20점)
-        if (record.키워드) {
-            const keywords = record.키워드.split(",").map(k => k.trim().toLowerCase());
-            keywords.forEach(kw => {
-                if (kw && cleanInput.includes(kw)) {
-                    score += 20;
+        // 2. 검색 및 점수 매기기 로직
+        function findBestAnswer(input) {
+            const cleanInput = input.replace(/\s/g, "").toLowerCase();
+            let bestMatch = null;
+            let highestScore = 0;
+
+            chatbotData.forEach(item => {
+                let score = 0;
+                
+                // [키워드 점수] Airtable의 '키워드' 필드에 단어가 포함되면 점수 부여
+                if (item.키워드) {
+                    const keywords = item.키워드.split(',').map(k => k.trim().toLowerCase());
+                    keywords.forEach(kw => {
+                        if (cleanInput.includes(kw)) score += 30;
+                    });
+                }
+
+                // [질문 점수] 저장된 질문과 유사하면 추가 점수
+                if (item.질문 && cleanInput.includes(item.질문.replace(/\s/g, "").toLowerCase())) {
+                    score += 50;
+                }
+
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestMatch = item;
                 }
             });
+
+            return highestScore >= 30 ? bestMatch : null;
         }
 
-        // 가중치 3: 태그 필드 매칭 (개당 10점)
-        if (record.태그) {
-            const tags = record.태그.split("#").map(t => t.trim().toLowerCase());
-            tags.forEach(tag => {
-                if (tag && cleanInput.includes(tag)) {
-                    score += 10;
+        // 3. 메시지 처리 함수
+        function sendMessage() {
+            const inputField = document.getElementById('userInput');
+            const text = inputField.value.trim();
+            if (!text) return;
+
+            addMessage(text, 'user');
+            inputField.value = '';
+
+            const match = findBestAnswer(text);
+            setTimeout(() => {
+                if (match) {
+                    addMessage(match.답변, 'bot', match.영상링크);
+                } else {
+                    addMessage("죄송합니다. 관련 정보를 찾지 못했습니다. 다른 단어로 질문해 주시겠어요?", 'bot');
                 }
-            });
+            }, 500);
         }
 
-        if (score > maxScore) {
-            maxScore = score;
-            bestMatch = record;
+        function addMessage(text, sender, videoLink = null) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = `message-bubble ${sender}-message`;
+            div.innerText = text;
+
+            if (videoLink && videoLink !== 'nan') {
+                const link = document.createElement('a');
+                link.href = videoLink;
+                link.className = 'video-button';
+                link.target = '_blank';
+                link.innerText = '📺 관련 영상 보기';
+                div.appendChild(link);
+            }
+
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
         }
-    });
 
-    // 최소 20점 이상일 때만 답변 (너무 무관한 답변 방지)
-    return maxScore >= 20 ? {
-        answer: bestMatch.답변,
-        videoLink: bestMatch.영상링크
-    } : null;
-}
-
-function addMessage(text, type, videoLink = null) {
-    const messages = document.getElementById('messages');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${type}-message`;
-    
-    const bubble = document.createElement('div');
-    bubble.className = 'message-bubble';
-    bubble.textContent = text;
-    
-    messageDiv.appendChild(bubble);
-
-    if (videoLink && videoLink !== 'nan' && videoLink.startsWith('http')) {
-        const videoBtn = document.createElement('a');
-        videoBtn.className = 'video-button';
-        videoBtn.href = videoLink;
-        videoBtn.target = '_blank';
-        videoBtn.innerHTML = '📺 관련 영상 보기';
-        bubble.appendChild(document.createElement('br'));
-        bubble.appendChild(videoBtn);
-    }
-
-    messages.appendChild(messageDiv);
-    messages.scrollTop = messages.scrollHeight;
-}
-</script>
+        loadData();
+    </script>
 </body>
 </html>
