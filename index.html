@@ -3,95 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>소아성장 AI 챗봇 v3.1</title>
+    <title>소아성장 AI 챗봇 - 개선 버전</title>
     <style>
-        body { font-family: 'Pretendard', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .chat-container { width: 400px; height: 600px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
-        .header { background: #2ecc71; color: white; padding: 20px; text-align: center; font-weight: bold; }
-        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .message { padding: 10px 15px; border-radius: 15px; max-width: 80%; line-height: 1.4; font-size: 14px; }
-        .user { align-self: flex-end; background: #2ecc71; color: white; }
-        .bot { align-self: flex-start; background: #f0f0f0; color: #333; }
-        .input-area { border-top: 1px solid #eee; padding: 15px; display: flex; gap: 10px; }
-        input { flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 5px; outline: none; }
-        button { background: #2ecc71; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+        /* 기존 디자인 스타일 유지 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh; display: flex; justify-content: center; align-items: center;
+        }
+        .chatbot-container {
+            width: 90%; max-width: 500px; height: 90vh; max-height: 700px;
+            background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #00B050 0%, #00d561 100%);
+            color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .chat-header h1 { font-size: 20px; margin-bottom: 5px; }
+        .version-badge { 
+            background: rgba(255,255,255,0.2); 
+            padding: 4px 12px; border-radius: 12px; font-size: 11px; display: inline-block; margin-top: 5px;
+        }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa; }
+        .message { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .user-message { align-items: flex-end; }
+        .bot-message { align-items: flex-start; }
+        .message-bubble {
+            max-width: 80%; padding: 12px 16px; border-radius: 18px;
+            word-wrap: break-word; line-height: 1.5; white-space: pre-wrap;
+        }
+        .user-message .message-bubble { background: #007bff; color: white; border-bottom-right-radius: 4px; }
+        .bot-message .message-bubble { background: white; color: #333; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .video-button {
+            display: inline-block; margin-top: 10px; padding: 10px 20px;
+            background: #FF0000; color: white; text-decoration: none;
+            border-radius: 20px; font-size: 14px; transition: background 0.3s;
+        }
+        .chat-input-container { padding: 15px; background: white; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; }
+        .chat-input { flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 25px; outline: none; }
+        .chat-input:focus { border-color: #00B050; }
+        .send-button { padding: 12px 24px; background: #00B050; color: white; border: none; border-radius: 25px; cursor: pointer; }
+        .loading { display: none; text-align: center; padding: 10px; color: #666; font-size: 13px; }
+        .loading.show { display: block; }
     </style>
 </head>
 <body>
-
-<div class="chat-container">
-    <div class="header">🏥 소아성장 AI 챗봇 (Gemini)</div>
-    <div id="chat-window">
-        <div class="message bot">안녕하세요! 소아 성장과 성조숙증에 대해 무엇이든 물어보세요. 😊</div>
+<div class="chatbot-container">
+    <div class="chat-header">
+        <h1>🏥 소아성장 AI 챗봇</h1>
+        <p>성장호르몬・성조숙증 전문</p>
+        <div class="version-badge">✨ 매핑 최적화 버전 v3.0</div>
     </div>
-    <div class="input-area">
-        <input type="text" id="user-input" placeholder="질문을 입력하세요..." onkeypress="if(event.keyCode==13) sendMessage()">
-        <button onclick="sendMessage()">전송</button>
+    <div class="chat-messages" id="messages">
+        </div>
+    <div class="loading" id="loading">답변을 찾는 중입니다...</div>
+    <div class="chat-input-container">
+        <input type="text" class="chat-input" id="userInput" placeholder="비타민, 성조숙증 등 궁금한 점을 입력하세요..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button class="send-button" onclick="sendMessage()">전송</button>
     </div>
 </div>
 
-<script type="module">
-    import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+<script>
+let allRecords = [];
 
-    // 1. 제공해주신 API 키를 여기에 입력합니다.
-    const API_KEY = "AIzaSyA1npxgOEe70Q-hbflJTZTGzpwjYoxSUI4";
-    const genAI = new GoogleGenerativeAI(API_KEY);
+// 1. 데이터 로드 (Airtable에서 추출한 chatbot_data.json 활용)
+window.addEventListener('load', async function() {
+    try {
+        const response = await fetch('chatbot_data.json');
+        if (!response.ok) throw new Error('데이터 로드 실패');
+        allRecords = await response.json();
+        addMessage("안녕하세요! 소아 성장과 성조숙증에 대해 무엇이든 물어보세요. 😊", 'bot');
+    } catch (error) {
+        console.error('Error:', error);
+        addMessage("데이터를 불러오지 못했습니다. 파일명을 확인해주세요.", 'bot');
+    }
+});
 
-    // 2. 챗봇의 페르소나와 지식 베이스를 설정합니다.
-    const systemInstruction = `
-        당신은 소아성장 및 성조숙증 전문 AI 상담사입니다. 
-        사용자의 질문에 대해 다음 지침을 반드시 따르세요:
-        
-        1. 비용 관련 질문이 들어오면 반드시 아래 정보를 우선적으로 답하세요:
-           - 성장호르몬 검사비: 약 10~20만원 내외 (병원별 상이)
-           - 성장호르몬 치료비: 아이의 몸무게에 따라 다르나 월 평균 80~120만원 내외
-        2. 질문의 핵심 의도를 파악하세요. '비용'을 물었는데 '인슐린'이나 '비만' 이야기를 먼저 하지 마세요.
-        3. 답변은 항상 친절하고 신뢰감 있는 말투로 작성하세요.
-    `;
+// 2. 메시지 전송 로직
+async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const question = input.value.trim();
+    if (!question || allRecords.length === 0) return;
 
-    async function sendMessage() {
-        const inputField = document.getElementById('user-input');
-        const chatWindow = document.getElementById('chat-window');
-        const userText = inputField.value.trim();
+    addMessage(question, 'user');
+    input.value = '';
+    document.getElementById('loading').classList.add('show');
 
-        if (!userText) return;
+    // 0.5초 후 답변 생성 (자연스러운 연출)
+    setTimeout(() => {
+        const result = findBestMatch(question);
+        document.getElementById('loading').classList.remove('show');
 
-        // 사용자 메시지 표시
-        appendMessage('user', userText);
-        inputField.value = '';
-
-        try {
-            // Gemini 모델 호출 (무료 티어 1.5 Flash 권장)
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-            
-            // 시스템 지침과 사용자 질문을 합쳐서 전송
-            const prompt = `${systemInstruction}\n\n사용자 질문: ${userText}`;
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            const botText = response.text();
-
-            // 봇 메시지 표시
-            appendMessage('bot', botText);
-        } catch (error) {
-            console.error(error);
-            appendMessage('bot', "죄송합니다. 잠시 오류가 발생했습니다. 다시 시도해 주세요.");
+        if (result) {
+            addMessage(result.answer, 'bot', result.videoLink);
+        } else {
+            addMessage("죄송합니다. 정확한 정보를 찾을 수 없습니다.\n'비타민', '성조숙증 검사', '성장호르몬 주사' 등 핵심 단어로 질문해보시겠어요?", 'bot');
         }
+    }, 500);
+}
+
+// 3. 핵심 검색 알고리즘 (Airtable 필드 기반 매핑)
+function findBestMatch(userInput) {
+    const cleanInput = userInput.toLowerCase().replace(/\s/g, ""); 
+    let bestMatch = null;
+    let maxScore = 0;
+
+    allRecords.forEach(record => {
+        let score = 0;
+        
+        // 가중치 1: 질문 필드와 포함 관계 (60점)
+        const dbQuestion = record.질문.toLowerCase().replace(/\s/g, "");
+        if (cleanInput.includes(dbQuestion) || dbQuestion.includes(cleanInput)) {
+            score += 60;
+        }
+
+        // 가중치 2: 키워드 필드 매칭 (개당 20점)
+        if (record.키워드) {
+            const keywords = record.키워드.split(",").map(k => k.trim().toLowerCase());
+            keywords.forEach(kw => {
+                if (kw && cleanInput.includes(kw)) {
+                    score += 20;
+                }
+            });
+        }
+
+        // 가중치 3: 태그 필드 매칭 (개당 10점)
+        if (record.태그) {
+            const tags = record.태그.split("#").map(t => t.trim().toLowerCase());
+            tags.forEach(tag => {
+                if (tag && cleanInput.includes(tag)) {
+                    score += 10;
+                }
+            });
+        }
+
+        if (score > maxScore) {
+            maxScore = score;
+            bestMatch = record;
+        }
+    });
+
+    // 최소 20점 이상일 때만 답변 (너무 무관한 답변 방지)
+    return maxScore >= 20 ? {
+        answer: bestMatch.답변,
+        videoLink: bestMatch.영상링크
+    } : null;
+}
+
+function addMessage(text, type, videoLink = null) {
+    const messages = document.getElementById('messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}-message`;
+    
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.textContent = text;
+    
+    messageDiv.appendChild(bubble);
+
+    if (videoLink && videoLink !== 'nan' && videoLink.startsWith('http')) {
+        const videoBtn = document.createElement('a');
+        videoBtn.className = 'video-button';
+        videoBtn.href = videoLink;
+        videoBtn.target = '_blank';
+        videoBtn.innerHTML = '📺 관련 영상 보기';
+        bubble.appendChild(document.createElement('br'));
+        bubble.appendChild(videoBtn);
     }
 
-    function appendMessage(sender, text) {
-        const chatWindow = document.getElementById('chat-window');
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('message', sender);
-        msgDiv.innerText = text;
-        chatWindow.appendChild(msgDiv);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-    }
-
-    // 전역 함수 등록
-    window.sendMessage = sendMessage;
+    messages.appendChild(messageDiv);
+    messages.scrollTop = messages.scrollHeight;
+}
 </script>
-
 </body>
 </html>
-
-
