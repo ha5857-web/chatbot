@@ -99,12 +99,12 @@
     <div class="chat-header">
         <h1>🏥 소아성장 AI 챗봇</h1>
         <p>성장호르몬・성조숙증・소아비만 전문</p>
-        <div class="ai-badge">🤖 Powered by Google Gemini AI</div>
+        <div class="ai-badge">🤖 Gemini AI + Smart Matching</div>
     </div>
     <div class="chat-messages" id="messages">
         <div class="welcome-message">
             <h2>안녕하세요! 👋</h2>
-            <p>AI가 자연스럽게 이해하고<br>정확하게 답변드립니다!</p>
+            <p>AI가 질문을 똑똑하게 이해하고<br>정확한 답변을 찾아드립니다!</p>
             <div class="example-questions">
                 <h3>💡 이런 질문을 해보세요:</h3>
                 <div class="example-question" onclick="sendExampleQuestion('성장호르몬은 언제 나오나요?')">
@@ -122,7 +122,7 @@
             </div>
         </div>
     </div>
-    <div class="loading" id="loading">🤖 AI가 답변을 생성하고 있습니다...</div>
+    <div class="loading" id="loading">🤖 AI가 가장 적합한 답변을 찾고 있습니다...</div>
     <div class="chat-input-container">
         <input type="text" class="chat-input" id="userInput" placeholder="궁금한 점을 자유롭게 질문하세요..." onkeypress="if(event.key==='Enter') sendMessage()">
         <button class="send-button" onclick="sendMessage()">전송</button>
@@ -131,7 +131,7 @@
 
 <script>
 // ⚠️ 여기에 Gemini API 키를 입력하세요!
-const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE';
+const GEMINI_API_KEY = 'AIzaSyD1g7RYxZCCwMiKQuDBEoAdeSMXZ-RU-Nc';
 
 let allRecords = [];
 let isFirstMessage = true;
@@ -151,7 +151,7 @@ window.addEventListener('load', async function() {
             !r.답변.includes('위를 절제')
         );
         
-        console.log(`✓ ${allRecords.length}개 데이터 로드 완료`);
+        console.log(`✓ ${allRecords.length}개 Q&A 로드 완료`);
     } catch (error) {
         console.error('데이터 로드 실패:', error);
         alert('데이터를 불러오는데 실패했습니다.');
@@ -209,21 +209,35 @@ async function sendMessage() {
         return;
     }
     
-    // 2단계: Gemini AI 호출
+    // 2단계: Gemini로 질문 매칭
     try {
-        const answer = await callGeminiAI(question);
+        const matchedQuestion = await findMatchingQuestionWithGemini(question);
         document.getElementById('loading').classList.remove('show');
         
-        if (answer) {
-            addMessage(answer.text, 'bot', answer.videoLink, 'ai');
-            setCachedAnswer(question, { answer: answer.text, videoLink: answer.videoLink });
+        if (matchedQuestion) {
+            console.log('✓ Gemini 매칭:', matchedQuestion.질문);
+            addMessage(matchedQuestion.답변, 'bot', matchedQuestion.영상링크, 'ai');
+            setCachedAnswer(question, { 
+                answer: matchedQuestion.답변, 
+                videoLink: matchedQuestion.영상링크 
+            });
         } else {
-            // 3단계: Fallback
+            // 3단계: Fallback (키워드 검색)
+            console.log('Gemini 매칭 실패, Fallback 사용');
             const fallbackAnswer = findAnswerFallback(question);
             if (fallbackAnswer) {
                 addMessage(fallbackAnswer.answer, 'bot', fallbackAnswer.videoLink);
             } else {
-                addMessage('죄송합니다. 관련 정보를 찾을 수 없습니다.\n다른 방식으로 질문해주시거나, 더 구체적으로 질문해주세요.', 'bot');
+                const suggestions = findSimilarQuestions(question);
+                let message = '죄송합니다. 정확히 일치하는 정보를 찾을 수 없습니다.\n\n';
+                if (suggestions.length > 0) {
+                    message += '혹시 이런 질문을 찾으시나요?\n\n';
+                    suggestions.forEach((q, idx) => {
+                        message += `${idx + 1}. ${q}\n`;
+                    });
+                    message += '\n위 질문 중 하나를 입력해보세요!';
+                }
+                addMessage(message, 'bot');
             }
         }
     } catch (error) {
@@ -239,52 +253,43 @@ async function sendMessage() {
     }
 }
 
-async function callGeminiAI(question) {
+async function findMatchingQuestionWithGemini(userQuestion) {
     // RPM 제한 체크
     requestCount++;
     setTimeout(() => requestCount--, 60000);
     
     if (requestCount > MAX_REQUESTS_PER_MINUTE) {
-        console.log('RPM 제한 초과, Fallback 사용');
+        console.log('RPM 제한 초과');
         return null;
     }
     
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === 'AIzaSyD1g7RYxZCCwMiKQuDBEoAdeSMXZ-RU-Nc') {
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
         console.error('API 키가 설정되지 않았습니다');
         return null;
     }
     
-    // 스마트 필터링: 관련 Q&A만 선택
-    const relevantQA = filterRelevantQA(question);
+    // 질문 목록만 Gemini에게 제공
+    const questionList = allRecords.map((r, idx) => 
+        `${idx + 1}. ${r.질문}`
+    ).join('\n');
     
-    if (relevantQA.length === 0) {
-        console.log('관련 Q&A 없음, Fallback 사용');
-        return null;
-    }
-    
-    // Q&A 데이터를 컨텍스트로 제공
-    const context = relevantQA.map(r => 
-        `질문: ${r.질문}\n답변: ${r.답변}`
-    ).join('\n\n---\n\n');
-    
-    const prompt = `당신은 소아 성장 전문 의료 AI 챗봇입니다.
+    const prompt = `당신은 질문 매칭 전문가입니다.
 
-아래 Q&A 데이터베이스에서 사용자의 질문에 가장 적합한 답변을 찾아 제공하세요.
+사용자의 질문과 가장 유사한 질문을 아래 목록에서 찾아주세요.
 
 # 규칙
-1. 반드시 아래 Q&A 데이터베이스의 답변만 사용하세요
-2. 사용자 질문과 가장 유사한 질문을 찾으세요
-3. 그 질문에 대한 답변을 그대로 제공하세요
-4. 답변을 수정하거나 추가 설명하지 마세요
-5. 만약 관련 답변이 없다면 "관련 정보를 찾을 수 없습니다"라고만 답하세요
+1. 아래 질문 목록 중 사용자 질문과 가장 의미가 유사한 질문의 번호를 찾으세요
+2. 반드시 번호만 답하세요 (예: "42")
+3. 만약 관련 질문이 없다면 "0"이라고만 답하세요
+4. 추가 설명 없이 숫자만 답하세요
 
-# Q&A 데이터베이스
-${context}
+# 질문 목록
+${questionList}
 
 # 사용자 질문
-${question}
+${userQuestion}
 
-# 답변`;
+# 가장 유사한 질문 번호`;
 
     try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -295,8 +300,8 @@ ${question}
                     parts: [{ text: prompt }]
                 }],
                 generationConfig: {
-                    temperature: 0.1,  // 더 정확하게
-                    maxOutputTokens: 1000
+                    temperature: 0.1,
+                    maxOutputTokens: 10
                 }
             })
         });
@@ -309,97 +314,44 @@ ${question}
         const data = await response.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         
-        if (!text || text.includes('관련 정보를 찾을 수 없습니다')) {
+        if (!text) return null;
+        
+        // 번호 추출
+        const number = parseInt(text.trim());
+        
+        if (isNaN(number) || number === 0 || number > allRecords.length) {
+            console.log('유효한 매칭 없음:', text);
             return null;
         }
         
-        // 영상 링크 찾기
-        let videoLink = null;
-        for (const record of relevantQA) {
-            if (text.includes(record.답변.substring(0, 50))) {
-                videoLink = record.영상링크;
-                break;
-            }
-        }
+        // 매칭된 질문 반환
+        return allRecords[number - 1];
         
-        return { text, videoLink };
     } catch (error) {
         console.error('Gemini API 호출 실패:', error);
         return null;
     }
 }
 
-function filterRelevantQA(question) {
+function findSimilarQuestions(question) {
     const lowerQuestion = question.toLowerCase();
-    
-    // 카테고리별 키워드
-    const categories = {
-        '성장호르몬': ['성장호르몬', '호르몬', '주사', '치료'],
-        '성조숙증': ['성조숙증', '가슴', '멍울', '사춘기', '2차성징', '유방'],
-        '소아비만': ['비만', '살', '체중', '뚱뚱', '다이어트'],
-        '영양': ['비타민', '영양', '칼슘', '아연', '철분', '단백질', '영양제'],
-        '수면': ['수면', '잠', '자야', '늦게'],
-        '운동': ['운동', '스트레칭'],
-        '키성장': ['키', '크', '작', '저신장', '센티', 'cm', '성장', '자라'],
-        '검사': ['검사', '병원', '비용', '골연령', '뼈나이'],
-    };
-    
-    // 어떤 카테고리에 속하는지 파악
-    let matchedCategories = [];
-    for (const [category, keywords] of Object.entries(categories)) {
-        for (const keyword of keywords) {
-            if (lowerQuestion.includes(keyword)) {
-                matchedCategories.push(category);
-                break;
+    const suggestions = [];
+    const keywords = ['성조숙증', '성장호르몬', '소아비만', '키', '저신장', '비만'];
+    let mainKeyword = '';
+    for (const keyword of keywords) {
+        if (lowerQuestion.includes(keyword)) {
+            mainKeyword = keyword;
+            break;
+        }
+    }
+    if (mainKeyword) {
+        for (const record of allRecords) {
+            if (record.질문.includes(mainKeyword) && suggestions.length < 3) {
+                suggestions.push(record.질문);
             }
         }
     }
-    
-    // 관련 Q&A 필터링
-    let relevantQA = [];
-    
-    if (matchedCategories.length > 0) {
-        // 카테고리에 맞는 Q&A만 선택
-        for (const record of allRecords) {
-            const recordText = (record.질문 + ' ' + record.키워드).toLowerCase();
-            for (const category of matchedCategories) {
-                const keywords = categories[category];
-                for (const keyword of keywords) {
-                    if (recordText.includes(keyword)) {
-                        relevantQA.push(record);
-                        break;
-                    }
-                }
-                if (relevantQA.includes(record)) break;
-            }
-            
-            // 최대 30개까지만
-            if (relevantQA.length >= 30) break;
-        }
-    } else {
-        // 카테고리 매칭 안되면 전체에서 키워드 매칭
-        for (const record of allRecords) {
-            const recordText = (record.질문 + ' ' + record.키워드).toLowerCase();
-            // 질문의 단어들과 매칭
-            const words = lowerQuestion.split(' ').filter(w => w.length > 1);
-            let score = 0;
-            for (const word of words) {
-                if (recordText.includes(word)) {
-                    score++;
-                }
-            }
-            if (score > 0) {
-                relevantQA.push({ ...record, score });
-            }
-        }
-        
-        // 점수순 정렬 후 상위 30개
-        relevantQA.sort((a, b) => b.score - a.score);
-        relevantQA = relevantQA.slice(0, 30);
-    }
-    
-    console.log(`✓ 관련 Q&A ${relevantQA.length}개 필터링`);
-    return relevantQA;
+    return suggestions;
 }
 
 function findAnswerFallback(question) {
