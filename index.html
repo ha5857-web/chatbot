@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>소아성장 AI 챗봇</title>
+    <title>소아성장 AI 챗봇 - 개선 버전</title>
     <style>
+        /* 기존 디자인 스타일 유지 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -21,14 +22,9 @@
             color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         .chat-header h1 { font-size: 20px; margin-bottom: 5px; }
-        .chat-header p { font-size: 12px; opacity: 0.9; }
         .version-badge { 
             background: rgba(255,255,255,0.2); 
-            padding: 4px 12px; 
-            border-radius: 12px; 
-            font-size: 11px; 
-            display: inline-block; 
-            margin-top: 5px;
+            padding: 4px 12px; border-radius: 12px; font-size: 11px; display: inline-block; margin-top: 5px;
         }
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa; }
         .message { margin-bottom: 15px; display: flex; flex-direction: column; }
@@ -36,415 +32,147 @@
         .bot-message { align-items: flex-start; }
         .message-bubble {
             max-width: 80%; padding: 12px 16px; border-radius: 18px;
-            word-wrap: break-word; line-height: 1.5;
+            word-wrap: break-word; line-height: 1.5; white-space: pre-wrap;
         }
-        .user-message .message-bubble {
-            background: #007bff; color: white; border-bottom-right-radius: 4px;
-        }
-        .bot-message .message-bubble {
-            background: white; color: #333; border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+        .user-message .message-bubble { background: #007bff; color: white; border-bottom-right-radius: 4px; }
+        .bot-message .message-bubble { background: white; color: #333; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .video-button {
             display: inline-block; margin-top: 10px; padding: 10px 20px;
             background: #FF0000; color: white; text-decoration: none;
             border-radius: 20px; font-size: 14px; transition: background 0.3s;
         }
-        .video-button:hover { background: #cc0000; }
-        .chat-input-container {
-            padding: 15px; background: white; border-top: 1px solid #e0e0e0;
-            display: flex; gap: 10px;
-        }
-        .chat-input {
-            flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0;
-            border-radius: 25px; font-size: 14px; outline: none; transition: border 0.3s;
-        }
+        .chat-input-container { padding: 15px; background: white; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; }
+        .chat-input { flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 25px; outline: none; }
         .chat-input:focus { border-color: #00B050; }
-        .send-button {
-            padding: 12px 24px; background: #00B050; color: white; border: none;
-            border-radius: 25px; font-size: 14px; cursor: pointer; transition: background 0.3s;
-        }
-        .send-button:hover { background: #009040; }
-        .send-button:active { transform: scale(0.95); }
-        .loading { display: none; text-align: center; padding: 10px; color: #666; }
+        .send-button { padding: 12px 24px; background: #00B050; color: white; border: none; border-radius: 25px; cursor: pointer; }
+        .loading { display: none; text-align: center; padding: 10px; color: #666; font-size: 13px; }
         .loading.show { display: block; }
-        .welcome-message { text-align: center; padding: 40px 20px; color: #666; }
-        .welcome-message h2 { color: #00B050; margin-bottom: 10px; }
-        .example-questions { margin-top: 20px; text-align: left; }
-        .example-questions h3 { font-size: 14px; color: #666; margin-bottom: 10px; }
-        .example-question {
-            background: white; padding: 10px 15px; margin: 8px 0; border-radius: 10px;
-            cursor: pointer; font-size: 13px; color: #333; transition: background 0.3s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .example-question:hover { background: #f0f0f0; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
 </head>
 <body>
 <div class="chatbot-container">
     <div class="chat-header">
         <h1>🏥 소아성장 AI 챗봇</h1>
-        <p>성장호르몬・성조숙증・소아비만 전문</p>
-        <div class="version-badge">✨ 개선 버전 v2.0 (100+ 패턴)</div>
+        <p>성장호르몬・성조숙증 전문</p>
+        <div class="version-badge">✨ 매핑 최적화 버전 v3.0</div>
     </div>
     <div class="chat-messages" id="messages">
-        <div class="welcome-message">
-            <h2>안녕하세요! 👋</h2>
-            <p>소아 성장과 비만에 대해<br>궁금한 점을 질문해주세요!</p>
-            <div class="example-questions">
-                <h3>💡 이런 질문을 해보세요:</h3>
-                <div class="example-question" onclick="sendExampleQuestion('성장호르몬은 언제 나오나요?')">
-                    성장호르몬은 언제 나오나요?
-                </div>
-                <div class="example-question" onclick="sendExampleQuestion('아이가 8센티미터나 자랐어요')">
-                    아이가 8센티미터나 자랐어요
-                </div>
-                <div class="example-question" onclick="sendExampleQuestion('가슴에 멍울이 생겼어요')">
-                    가슴에 멍울이 생겼어요
-                </div>
-                <div class="example-question" onclick="sendExampleQuestion('살이 많이 쪘는데 어떻게 해야 하나요?')">
-                    살이 많이 쪘는데 어떻게 해야 하나요?
-                </div>
-            </div>
         </div>
-    </div>
-    <div class="loading" id="loading">답변을 찾고 있습니다...</div>
+    <div class="loading" id="loading">답변을 찾는 중입니다...</div>
     <div class="chat-input-container">
-        <input type="text" class="chat-input" id="userInput" placeholder="궁금한 점을 자유롭게 질문하세요..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <input type="text" class="chat-input" id="userInput" placeholder="비타민, 성조숙증 등 궁금한 점을 입력하세요..." onkeypress="if(event.key==='Enter') sendMessage()">
         <button class="send-button" onclick="sendMessage()">전송</button>
     </div>
 </div>
+
 <script>
 let allRecords = [];
-let isFirstMessage = true;
 
+// 1. 데이터 로드 (Airtable에서 추출한 chatbot_data.json 활용)
 window.addEventListener('load', async function() {
-    console.log('데이터 로딩 시작...');
     try {
         const response = await fetch('chatbot_data.json');
         if (!response.ok) throw new Error('데이터 로드 실패');
         allRecords = await response.json();
-        console.log(`✓ ${allRecords.length}개 데이터 로드 완료`);
+        addMessage("안녕하세요! 소아 성장과 성조숙증에 대해 무엇이든 물어보세요. 😊", 'bot');
     } catch (error) {
-        console.error('데이터 로드 실패:', error);
-        alert('데이터를 불러오는데 실패했습니다.');
+        console.error('Error:', error);
+        addMessage("데이터를 불러오지 못했습니다. 파일명을 확인해주세요.", 'bot');
     }
 });
 
-function sendExampleQuestion(question) {
-    document.getElementById('userInput').value = question;
-    sendMessage();
-}
-
+// 2. 메시지 전송 로직
 async function sendMessage() {
     const input = document.getElementById('userInput');
     const question = input.value.trim();
-    if (!question) return;
-    if (allRecords.length === 0) {
-        alert('데이터를 로딩 중입니다. 잠시 후 다시 시도해주세요.');
-        return;
-    }
-    if (isFirstMessage) {
-        const welcome = document.querySelector('.welcome-message');
-        if (welcome) welcome.remove();
-        isFirstMessage = false;
-    }
+    if (!question || allRecords.length === 0) return;
+
     addMessage(question, 'user');
     input.value = '';
     document.getElementById('loading').classList.add('show');
-    const result = findAnswer(question);
-    document.getElementById('loading').classList.remove('show');
-    if (result) {
-        addMessage(result.answer, 'bot', result.videoLink);
-    } else {
-        const suggestions = findSimilarQuestions(question);
-        let message = '죄송합니다. 정확히 일치하는 정보를 찾을 수 없습니다.\n\n';
-        if (suggestions.length > 0) {
-            message += '혹시 이런 질문을 찾으시나요?\n\n';
-            suggestions.forEach((q, idx) => {
-                message += `${idx + 1}. ${q}\n`;
-            });
-            message += '\n위 질문 중 하나를 입력해보세요!';
+
+    // 0.5초 후 답변 생성 (자연스러운 연출)
+    setTimeout(() => {
+        const result = findBestMatch(question);
+        document.getElementById('loading').classList.remove('show');
+
+        if (result) {
+            addMessage(result.answer, 'bot', result.videoLink);
         } else {
-            message += '다른 방식으로 질문해보시거나, 더 구체적으로 질문해주세요.';
+            addMessage("죄송합니다. 정확한 정보를 찾을 수 없습니다.\n'비타민', '성조숙증 검사', '성장호르몬 주사' 등 핵심 단어로 질문해보시겠어요?", 'bot');
         }
-        addMessage(message, 'bot');
-    }
+    }, 500);
 }
 
-function findSimilarQuestions(question) {
-    const lowerQuestion = question.toLowerCase();
-    const suggestions = [];
-    const keywords = ['성조숙증', '성장호르몬', '소아비만', '키', '저신장', '비만'];
-    let mainKeyword = '';
-    for (const keyword of keywords) {
-        if (lowerQuestion.includes(keyword)) {
-            mainKeyword = keyword;
-            break;
-        }
-    }
-    if (mainKeyword) {
-        for (const record of allRecords) {
-            if (record.질문.includes(mainKeyword) && suggestions.length < 3) {
-                suggestions.push(record.질문);
-            }
-        }
-    }
-    return suggestions;
-}
-
-function findExactMatch(targetQuestion) {
-    for (const record of allRecords) {
-        if (record.질문 === targetQuestion) {
-            return {
-                answer: record.답변 || '답변 정보가 없습니다.',
-                videoLink: record.영상링크,
-                question: record.질문
-            };
-        }
-    }
-    return null;
-}
-
-function findAnswer(question) {
-    const lowerQuestion = question.toLowerCase();
-    const cleanQuestion = lowerQuestion.replace(/\s/g, '');
-    
-    // 100+ 직접 매핑 패턴
-    const questionMappings = {
-        // 성장 속도 관련 (숫자 5-15)
-        '5센티': '아이가 1년에 얼마나 커야 정상인가요?',
-        '5cm': '아이가 1년에 얼마나 커야 정상인가요?',
-        '5센치': '아이가 1년에 얼마나 커야 정상인가요?',
-        '6센티': '아이가 1년에 얼마나 커야 정상인가요?',
-        '6cm': '아이가 1년에 얼마나 커야 정상인가요?',
-        '6센치': '아이가 1년에 얼마나 커야 정상인가요?',
-        '7센티': '아이가 1년에 얼마나 커야 정상인가요?',
-        '7cm': '아이가 1년에 얼마나 커야 정상인가요?',
-        '7센치': '아이가 1년에 얼마나 커야 정상인가요?',
-        '8센티': '아이가 1년에 얼마나 커야 정상인가요?',
-        '8cm': '아이가 1년에 얼마나 커야 정상인가요?',
-        '8센치': '아이가 1년에 얼마나 커야 정상인가요?',
-        '9센티': '아이가 1년에 얼마나 커야 정상인가요?',
-        '9cm': '아이가 1년에 얼마나 커야 정상인가요?',
-        '10센티': '아이가 1년에 얼마나 커야 정상인가요?',
-        '10cm': '아이가 1년에 얼마나 커야 정상인가요?',
-        '11센티': '아이가 1년에 얼마나 커야 정상인가요?',
-        '11cm': '아이가 1년에 얼마나 커야 정상인가요?',
-        '12센티': '아이가 1년에 얼마나 커야 정상인가요?',
-        '12cm': '아이가 1년에 얼마나 커야 정상인가요?',
-        '15센티': '아이가 1년에 얼마나 커야 정상인가요?',
-        '15cm': '아이가 1년에 얼마나 커야 정상인가요?',
-        '1년에몇': '아이가 1년에 얼마나 커야 정상인가요?',
-        '얼마나커': '아이가 1년에 얼마나 커야 정상인가요?',
-        '성장속도': '우리 아이 성장 속도, 어떻게 확인하나요?',
-        '급성장': '아이가 1년에 얼마나 커야 정상인가요?',
-        '많이컸': '아이가 1년에 얼마나 커야 정상인가요?',
-        '많이자람': '아이가 1년에 얼마나 커야 정상인가요?',
-        
-        // 성조숙증 관련
-        '가슴멍울': '만 두 살인데 가슴에 멍울이 잡혔어요. 성조숙증인가요?',
-        '가슴몽우리': '만 두 살인데 가슴에 멍울이 잡혔어요. 성조숙증인가요?',
-        '유방발달': '만 두 살인데 가슴에 멍울이 잡혔어요. 성조숙증인가요?',
-        '가슴만져': '만 두 살인데 가슴에 멍울이 잡혔어요. 성조숙증인가요?',
-        '가슴커짐': '만 두 살인데 가슴에 멍울이 잡혔어요. 성조숙증인가요?',
-        '2차성징': '조기 유방 발육증과 성조숙증은 어떻게 구별하나요?',
-        '사춘기빨리': '조기 유방 발육증과 성조숙증은 어떻게 구별하나요?',
-        '성조숙증증상': '조기 유방 발육증과 성조숙증은 어떻게 구별하나요?',
-        '성조숙증치료': '성조숙증 진단을 받았는데, 지엔알에이치 아날로그 치료를 꼭 해야 하나요?',
-        '성조숙증검사': '성조숙증 진단을 위해 왜 이렇게 많은 검사를 해야 하나요?',
-        
-        // 성장호르몬 관련
-        '성장호르몬언제': '성장호르몬은 언제 가장 많이 나오나요?',
-        '호르몬언제': '성장호르몬은 언제 가장 많이 나오나요?',
-        '언제나오': '성장호르몬은 언제 가장 많이 나오나요?',
-        '몇시나오': '성장호르몬은 언제 가장 많이 나오나요?',
-        '성장호르몬어디': '성장호르몬은 우리 몸 어디에서 만들어지나요?',
-        '어디에서만들': '성장호르몬은 우리 몸 어디에서 만들어지나요?',
-        '성장호르몬주사': '성장호르몬 주사, 매일 맞아야 하나요?',
-        '주사효과': '성장호르몬 치료, 정말 효과가 있나요?',
-        '성장호르몬효과': '성장호르몬 치료, 정말 효과가 있나요?',
-        '부작용': '성장호르몬 주사의 부작용은 없나요?',
-        
-        // 소아비만 관련
-        '살찜': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
-        '살쪘': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
-        '뚱뚱': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
-        '체중증가': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
-        '살빼': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
-        '다이어트': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
-        '체중관리': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
-        '비만진단': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
-        'bmi': '우리 아이가 소아비만인지 어떻게 알 수 있나요?',
-        
-        // 키 관련
-        '키작': '특발성 저신장이란 무엇이며, 치료가 필요한가요?',
-        '키가작': '특발성 저신장이란 무엇이며, 치료가 필요한가요?',
-        '저신장': '특발성 저신장이란 무엇이며, 치료가 필요한가요?',
-        '키안큼': '특발성 저신장이란 무엇이며, 치료가 필요한가요?',
-        '작은키': '특발성 저신장이란 무엇이며, 치료가 필요한가요?',
-        '3백분위': '3백분위 미만 또는 연간 성장 속도가 4cm 미만이면 어떤 검사를 받아야 하나요?',
-        
-        // 검사 관련
-        '검사받': '3백분위 미만 또는 연간 성장 속도가 4cm 미만이면 어떤 검사를 받아야 하나요?',
-        '병원가': '6살 아이가 1년에 4cm도 안 자랐는데 병원에 가야 하나요?',
-        '언제검사': '3백분위 미만 또는 연간 성장 속도가 4cm 미만이면 어떤 검사를 받아야 하나요?',
-        '검사비용': '성장 검사 비용은 얼마나 드나요?',
-        '골연령': '골연령 검사가 부모 키 공식보다 더 정확한가요?',
-        '뼈나이': '골연령 검사가 부모 키 공식보다 더 정확한가요?',
-        
-        // 수면 관련
-        '몇시자야': '아이를 몇 시에 재워야 성장에 좋은가요?',
-        '잠': '아이를 몇 시에 재워야 성장에 좋은가요?',
-        '수면시간': '아이를 몇 시에 재워야 성장에 좋은가요?',
-        '늦게자': '아이를 몇 시에 재워야 성장에 좋은가요?',
-        
-        // 영양 관련
-        '비타민': '비타민 디를 과다 복용하면 안 되나요?',
-        '칼슘': '칼슘제는 언제부터 먹이면 좋을까요?',
-        '아연': '아연 결핍 증상은 어떻게 알 수 있나요?',
-        '영양제': '성장기 아이에게 어떤 영양제를 먹여야 하나요?',
-        
-        // 운동 관련
-        '운동': '키 크는 데 도움이 되는 운동은 무엇인가요?',
-        '스트레칭': '키 크는 데 도움이 되는 운동은 무엇인가요?',
-    };
-    
-    // 1단계: 직접 매핑 확인
-    for (const [pattern, mappedQuestion] of Object.entries(questionMappings)) {
-        if (cleanQuestion.includes(pattern)) {
-            console.log('✓ 직접 매핑:', pattern, '→', mappedQuestion);
-            const mappedResult = findExactMatch(mappedQuestion);
-            if (mappedResult) {
-                return mappedResult;
-            }
-        }
-    }
-    
-    // 2단계: 카테고리 기반 검색
-    const categoryKeywords = {
-        '성장호르몬_기초': ['성장호르몬은', '성장호르몬이', '어디에서', 'igf', '뇌하수체', '시상하부', '분비'],
-        '성장호르몬_치료': ['성장호르몬치료', '성장호르몬주사', '주사', '치료기간', '치료효과'],
-        '성조숙증': ['성조숙증', '사춘기', '2차성징', '가슴', '조기유방'],
-        '소아비만': ['소아비만', 'bmi', '비만', '체질량지수', '살', '체중', '뚱뚱'],
-        '저신장': ['저신장', '키가작', '3백분위', '키작'],
-        '영양': ['비타민', '영양', '칼슘', '아연', '철분', '단백질'],
-        '식습관': ['식단', '간식', '음식', '먹', '식사'],
-        '운동': ['운동', '스트레칭', '체육'],
-        '수면': ['수면', '잠', '늦게자', '재워', '자야'],
-        '검사': ['검사', '비용', '보험', '골연령', '뼈나이'],
-        '일반성장': ['성장', '키', '크', '자라', '성장속도', '1년', '센티', 'cm'],
-    };
-    
-    let userCategory = null;
+// 3. 핵심 검색 알고리즘 (Airtable 필드 기반 매핑)
+function findBestMatch(userInput) {
+    const cleanInput = userInput.toLowerCase().replace(/\s/g, ""); 
+    let bestMatch = null;
     let maxScore = 0;
-    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+
+    allRecords.forEach(record => {
         let score = 0;
-        for (const keyword of keywords) {
-            if (lowerQuestion.includes(keyword)) {
-                score += 1;
-            }
+        
+        // 가중치 1: 질문 필드와 포함 관계 (60점)
+        const dbQuestion = record.질문.toLowerCase().replace(/\s/g, "");
+        if (cleanInput.includes(dbQuestion) || dbQuestion.includes(cleanInput)) {
+            score += 60;
         }
+
+        // 가중치 2: 키워드 필드 매칭 (개당 20점)
+        if (record.키워드) {
+            const keywords = record.키워드.split(",").map(k => k.trim().toLowerCase());
+            keywords.forEach(kw => {
+                if (kw && cleanInput.includes(kw)) {
+                    score += 20;
+                }
+            });
+        }
+
+        // 가중치 3: 태그 필드 매칭 (개당 10점)
+        if (record.태그) {
+            const tags = record.태그.split("#").map(t => t.trim().toLowerCase());
+            tags.forEach(tag => {
+                if (tag && cleanInput.includes(tag)) {
+                    score += 10;
+                }
+            });
+        }
+
         if (score > maxScore) {
             maxScore = score;
-            userCategory = category;
+            bestMatch = record;
         }
-    }
-    
-    console.log('파악된 카테고리:', userCategory, '(점수:', maxScore + ')');
-    
-    let bestMatch = null;
-    let bestScore = 0;
-    
-    for (const record of allRecords) {
-        const dbQuestion = (record.질문 || '').toLowerCase();
-        const cleanDbQuestion = dbQuestion.replace(/\s/g, '');
-        const keywords = (record.키워드 || '').toLowerCase();
-        const tags = (record.태그 || '').toLowerCase();
-        
-        // 카테고리 필터링
-        if (userCategory && maxScore >= 2) {
-            let recordInCategory = false;
-            const categoryKws = categoryKeywords[userCategory] || [];
-            for (const kw of categoryKws) {
-                if (dbQuestion.includes(kw) || keywords.includes(kw)) {
-                    recordInCategory = true;
-                    break;
-                }
-            }
-            if (!recordInCategory) {
-                continue;
-            }
-        }
-        
-        let score = 0;
-        
-        if (cleanDbQuestion === cleanQuestion) {
-            score = 1000;
-        } else if (cleanDbQuestion.includes(cleanQuestion)) {
-            score = 500;
-        } else if (cleanQuestion.includes(cleanDbQuestion)) {
-            score = 400;
-        } else {
-            const mainKeywords = ['성조숙증', '성장호르몬', '소아비만', '키', '비만', '성장', '저신장'];
-            for (const mainKey of mainKeywords) {
-                if (lowerQuestion.includes(mainKey) && dbQuestion.includes(mainKey)) {
-                    score += 200;
-                }
-            }
-            
-            const keywordList = keywords.split(',').map(k => k.trim());
-            for (const keyword of keywordList) {
-                if (keyword && keyword.length > 1) {
-                    if (lowerQuestion.includes(keyword)) {
-                        score += 50;
-                    }
-                }
-            }
-            
-            const tagList = tags.split('#').map(t => t.trim()).filter(t => t);
-            for (const tag of tagList) {
-                if (tag && lowerQuestion.includes(tag)) {
-                    score += 30;
-                }
-            }
-        }
-        
-        if (score > bestScore) {
-            bestScore = score;
-            bestMatch = { 
-                answer: record.답변 || '답변 정보가 없습니다.', 
-                videoLink: record.영상링크,
-                question: record.질문
-            };
-        }
-    }
-    
-    console.log('검색어:', question, '/ 카테고리:', userCategory, '/ 최고점수:', bestScore, '/ 매칭:', bestMatch?.question);
-    return bestScore >= 50 ? bestMatch : null;
+    });
+
+    // 최소 20점 이상일 때만 답변 (너무 무관한 답변 방지)
+    return maxScore >= 20 ? {
+        answer: bestMatch.답변,
+        videoLink: bestMatch.영상링크
+    } : null;
 }
 
 function addMessage(text, type, videoLink = null) {
     const messages = document.getElementById('messages');
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}-message`;
+    
     const bubble = document.createElement('div');
     bubble.className = 'message-bubble';
     bubble.textContent = text;
+    
     messageDiv.appendChild(bubble);
-    if (videoLink && type === 'bot' && videoLink !== 'nan') {
+
+    if (videoLink && videoLink !== 'nan' && videoLink.startsWith('http')) {
         const videoBtn = document.createElement('a');
         videoBtn.className = 'video-button';
         videoBtn.href = videoLink;
         videoBtn.target = '_blank';
-        videoBtn.innerHTML = '📺 영상으로 보기';
+        videoBtn.innerHTML = '📺 관련 영상 보기';
         bubble.appendChild(document.createElement('br'));
         bubble.appendChild(videoBtn);
     }
+
     messages.appendChild(messageDiv);
     messages.scrollTop = messages.scrollHeight;
 }
