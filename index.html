@@ -243,9 +243,11 @@ window.addEventListener('load', function() {
     renderTree();
 });
 
-function renderTree() {
+function renderTree(dataToRender = null) {
     const treeEl = document.getElementById('tree');
     treeEl.innerHTML = '';
+    
+    const data = dataToRender || treeData;
     
     const categories = {
         '성조숙증': '🎀',
@@ -261,7 +263,7 @@ function renderTree() {
         '기타': '📋'
     };
     
-    for (const [mainCat, subCats] of Object.entries(treeData)) {
+    for (const [mainCat, subCats] of Object.entries(data)) {
         const totalCount = Object.values(subCats).reduce((sum, items) => sum + items.length, 0);
         if (totalCount === 0) continue;
         
@@ -381,6 +383,10 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
                 filtered[mainCat][subCat] = matchedItems;
             }
         }
+        // 빈 카테고리 제거
+        if (Object.keys(filtered[mainCat]).length === 0) {
+            delete filtered[mainCat];
+        }
     }
     
     // 영상 모음 표시
@@ -414,20 +420,18 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
         videoResults.classList.remove('active');
     }
     
-    // 트리 렌더링
-    const temp = window.treeData;
-    window.treeData = filtered;
-    renderTree();
+    // 필터링된 데이터로 트리 렌더링
+    renderTree(filtered);
     
     // 모든 트리 자동 펼치기
-    document.querySelectorAll('.tree-main, .tree-sub-item').forEach(el => {
-        el.classList.add('active');
-    });
-    document.querySelectorAll('.tree-sub, .questions').forEach(el => {
-        el.classList.add('active');
-    });
-    
-    window.treeData = temp;
+    setTimeout(() => {
+        document.querySelectorAll('.tree-main, .tree-sub-item').forEach(el => {
+            el.classList.add('active');
+        });
+        document.querySelectorAll('.tree-sub, .questions').forEach(el => {
+            el.classList.add('active');
+        });
+    }, 100);
 });
 </script>
 </body>
