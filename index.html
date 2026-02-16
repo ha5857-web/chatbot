@@ -139,6 +139,59 @@
             transform: translateY(-50%); color: #999;
         }
         
+        .video-results {
+            display: none;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .video-results.active { display: block; }
+        .video-results h3 {
+            color: #00B050;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        .video-card {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #FF0000;
+            transition: all 0.2s;
+        }
+        .video-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .video-title {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+        .video-link-btn {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #FF0000;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+        .video-link-btn:hover {
+            background: #cc0000;
+        }
+        
         @media (max-width: 768px) {
             .container { border-radius: 0; }
             .answer-panel { max-width: 100%; }
@@ -158,6 +211,11 @@
             <input type="text" class="search-input" id="searchInput" 
                    placeholder="질문 검색... (예: 성조숙증, 성장호르몬)">
             <span class="search-icon">🔍</span>
+        </div>
+        
+        <div class="video-results" id="videoResults">
+            <h3>📺 관련 영상</h3>
+            <div class="video-grid" id="videoGrid"></div>
         </div>
         
         <ul class="tree" id="tree"></ul>
@@ -295,23 +353,68 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
     
     if (!searchTerm) {
         renderTree();
+        document.getElementById('videoResults').classList.remove('active');
         return;
     }
     
     const filtered = {};
+    const matchedVideos = [];
+    
     for (const [mainCat, subCats] of Object.entries(treeData)) {
         filtered[mainCat] = {};
         for (const [subCat, items] of Object.entries(subCats)) {
-            const matchedItems = items.filter(item => 
-                item.question.toLowerCase().includes(searchTerm) ||
-                (item.keywords && item.keywords.toLowerCase().includes(searchTerm))
-            );
+            const matchedItems = items.filter(item => {
+                const isMatch = item.question.toLowerCase().includes(searchTerm) ||
+                    (item.keywords && item.keywords.toLowerCase().includes(searchTerm));
+                
+                // 영상 수집
+                if (isMatch && item.video && item.video !== 'nan') {
+                    matchedVideos.push({
+                        question: item.question,
+                        video: item.video
+                    });
+                }
+                
+                return isMatch;
+            });
             if (matchedItems.length > 0) {
                 filtered[mainCat][subCat] = matchedItems;
             }
         }
     }
     
+    // 영상 모음 표시
+    const videoGrid = document.getElementById('videoGrid');
+    const videoResults = document.getElementById('videoResults');
+    
+    if (matchedVideos.length > 0) {
+        videoGrid.innerHTML = '';
+        
+        // 최대 20개까지만 표시
+        const videosToShow = matchedVideos.slice(0, 20);
+        
+        videosToShow.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            card.innerHTML = `
+                <div class="video-title">${item.question}</div>
+                <a href="${item.video}" target="_blank" class="video-link-btn">
+                    ▶ 영상 보기
+                </a>
+            `;
+            videoGrid.appendChild(card);
+        });
+        
+        videoResults.classList.add('active');
+        
+        // 제목 업데이트
+        document.querySelector('.video-results h3').textContent = 
+            `📺 관련 영상 (${matchedVideos.length}개)`;
+    } else {
+        videoResults.classList.remove('active');
+    }
+    
+    // 트리 렌더링
     const temp = window.treeData;
     window.treeData = filtered;
     renderTree();
