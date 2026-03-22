@@ -126,17 +126,37 @@
         .video-button:hover { background: #cc0000; }
         
         .search-box {
-            margin-bottom: 20px; position: relative;
+            margin-bottom: 20px;
+        }
+        .search-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        .search-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 500;
         }
         .search-input {
-            width: 100%; padding: 15px 45px 15px 20px;
+            width: 100%; padding: 12px 40px 12px 15px;
             border: 2px solid #e9ecef; border-radius: 12px;
-            font-size: 15px; outline: none; transition: border 0.3s;
+            font-size: 14px; outline: none; transition: border 0.3s;
         }
         .search-input:focus { border-color: #00B050; }
         .search-icon {
-            position: absolute; right: 15px; top: 50%;
-            transform: translateY(-50%); color: #999;
+            position: absolute; right: 12px; top: 50%;
+            transform: translateY(-50%); color: #999; font-size: 16px;
+        }
+        .search-examples {
+            font-size: 11px;
+            color: #999;
+            margin-top: 3px;
         }
         
         .video-results {
@@ -208,9 +228,22 @@
     
     <div class="content">
         <div class="search-box">
-            <input type="text" class="search-input" id="searchInput" 
-                   placeholder="질문 검색... (예: 성조숙증, 성장호르몬)">
-            <span class="search-icon">🔍</span>
+            <div class="search-row">
+                <div class="search-input-wrapper">
+                    <div class="search-label">📌 주제 검색</div>
+                    <input type="text" class="search-input" id="mainSearch" 
+                           placeholder="예: 성조숙증, 성장호르몬, 비만">
+                    <span class="search-icon">🔍</span>
+                    <div class="search-examples">주제를 입력하세요</div>
+                </div>
+                <div class="search-input-wrapper">
+                    <div class="search-label">🔎 하위 검색</div>
+                    <input type="text" class="search-input" id="subSearch" 
+                           placeholder="예: 치료, 효과, 진단, 검사">
+                    <span class="search-icon">🎯</span>
+                    <div class="search-examples">세부 내용 (선택사항)</div>
+                </div>
+            </div>
         </div>
         
         <div class="video-results" id="videoResults">
@@ -243,6 +276,121 @@ window.addEventListener('load', function() {
     renderTree();
 });
 
+// 유사어/오타 매핑
+const synonymMap = {
+    '성징호르몬': '성장호르몬',
+    '성징 호르몬': '성장호르몬',
+    '성장 호르몬': '성장호르몬',
+    '성장홀몬': '성장호르몬',
+    '호르몬': '성장호르몬',
+    '성조숙': '성조숙증',
+    '성조속증': '성조숙증',
+    '조숙증': '성조숙증',
+    '비만도': '비만',
+    '소아 비만': '소아비만',
+    '아동비만': '소아비만',
+    '키성장': '키 성장',
+    '신장': '키',
+    '저신장': '키'
+};
+
+// 카테고리/섹션 키워드 매핑
+const categoryKeywords = {
+    '제1부 키 성장의 이해': ['키', '성장', '신장', '백분위', '성장곡선'],
+    '키 성장의 기본 원리': ['1년', '얼마나', '커야', '성장속도'],
+    '키 측정하고 평가하기': ['측정', '재는', '백분위', '성장곡선'],
+    '키 예측': ['예측', '최종키', '부모키', '유전'],
+    '골연령 검사': ['골연령', '뼈나이', '손엑스레이', 'x-ray', 'x레이'],
+    '사춘기와 급성장기': ['사춘기', '급성장'],
+    
+    '제2부 성장호르몬 치료': ['성장호르몬'],
+    '기초 지식': ['언제', '어디', '분비', '나오'],
+    '치료 대상': ['대상', '누가', '필요'],
+    '치료 전 검사': ['검사', '자극검사'],
+    '치료 효과': ['효과', '얼마나', '키'],
+    '건강보험 급여': ['급여', '보험', '비용'],
+    '부작용과 모니터링': ['부작용', '안전', '암'],
+    '주사 방법': ['주사', '맞는', '투여'],
+    
+    '제3부 성조숙증': ['성조숙증', '사춘기'],
+    '성조숙증이란': ['무엇', '개념'],
+    '진단과 검사': ['진단', '검사', '초음파'],
+    '조기 유방 발육증': ['조기', '유방', '가슴'],
+    'GnRH 아날로그 치료': ['gnrh', '치료', '억제'],
+    
+    '제4부 성장과 영양': ['영양', '식단', '음식'],
+    '비타민D·칼슘·마그네슘': ['비타민d', '칼슘', '마그네슘'],
+    '단백질': ['단백질'],
+    '비타민과 미네랄': ['비타민', '아연', '철분'],
+    '실전 식단 구성': ['식단', '먹', '음식'],
+    
+    '제5부 소아비만': ['비만', '살', '체중'],
+    '이해와 진단': ['진단', 'bmi', '기준'],
+    '예방과 관리': ['예방', '관리', '다이어트'],
+    
+    '제6부 대사 합병증': ['대사', '합병증'],
+    '인슐린 저항성': ['인슐린', '저항성'],
+    '제2형 당뇨병': ['당뇨', '혈당'],
+    '지방간': ['지방간', '간'],
+    '고혈압과 이상지질혈증': ['고혈압', '콜레스테롤'],
+    '대사증후군': ['대사증후군'],
+    
+    '제7부 비만의 치료': ['비만', '치료'],
+    '연속혈당측정기': ['리브레', '혈당측정'],
+    'GLP-1 수용체 작용제': ['glp', '삭센다', '위고비']
+};
+
+function normalizeSearchTerm(term) {
+    term = term.toLowerCase().trim();
+    // 유사어 변환
+    for (const [synonym, original] of Object.entries(synonymMap)) {
+        if (term.includes(synonym)) {
+            term = term.replace(synonym, original);
+        }
+    }
+    return term;
+}
+
+// 검색어 토큰화 (의미있는 키워드 추출)
+function tokenizeSearch(searchTerm) {
+    // 조사 및 불필요한 단어 제거
+    const stopWords = ['은', '는', '이', '가', '을', '를', '에', '의', '와', '과', '도', '만', '요', '까', '나요', '어떤가요', '무엇', '어떻게', '언제'];
+    
+    // 공백으로 분리
+    let tokens = searchTerm.toLowerCase().split(/\s+/);
+    
+    // 2글자 이상만 유지 & 불용어 제거
+    tokens = tokens.filter(token => {
+        if (token.length < 2) return false;
+        return !stopWords.some(stop => token === stop || token.endsWith(stop));
+    });
+    
+    return tokens;
+}
+
+function matchesCategory(searchTerm, categoryName, sectionName) {
+    const term = searchTerm.toLowerCase();
+    const catLower = categoryName.toLowerCase();
+    const secLower = sectionName ? sectionName.toLowerCase() : '';
+    
+    // 직접 매칭
+    if (catLower.includes(term) || secLower.includes(term)) {
+        return true;
+    }
+    
+    // 키워드 매칭
+    const catKeywords = categoryKeywords[categoryName] || [];
+    const secKeywords = sectionName ? (categoryKeywords[sectionName] || []) : [];
+    
+    for (const keyword of [...catKeywords, ...secKeywords]) {
+        if (term.includes(keyword) || keyword.includes(term)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 function renderTree(dataToRender = null) {
     const treeEl = document.getElementById('tree');
     treeEl.innerHTML = '';
@@ -260,7 +408,21 @@ function renderTree(dataToRender = null) {
         '기타 정보': '📋'
     };
     
-    for (const [mainCat, subCats] of Object.entries(data)) {
+    // 1부부터 7부까지 순서대로
+    const orderedKeys = [
+        '제1부 키 성장의 이해',
+        '제2부 성장호르몬 치료',
+        '제3부 성조숙증',
+        '제4부 성장과 영양',
+        '제5부 소아비만',
+        '제6부 대사 합병증',
+        '제7부 비만의 치료',
+        '기타 정보'
+    ].filter(key => data[key]);
+    
+    for (const mainCat of orderedKeys) {
+        const subCats = data[mainCat];
+        if (!subCats) continue;
         const totalCount = Object.values(subCats).reduce((sum, items) => sum + items.length, 0);
         if (totalCount === 0) continue;
         
@@ -347,35 +509,80 @@ function closeAnswer() {
 }
 
 // 검색 기능
-document.getElementById('searchInput').addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
+// 통합 검색 함수
+function performSearch() {
+    const mainTerm = document.getElementById('mainSearch').value.trim();
+    const subTerm = document.getElementById('subSearch').value.trim();
     
-    if (!searchTerm) {
+    // 둘 다 비어있으면 전체 표시
+    if (!mainTerm && !subTerm) {
         renderTree();
         document.getElementById('videoResults').classList.remove('active');
         return;
     }
+    
+    // 검색어 처리
+    const mainNormalized = mainTerm ? normalizeSearchTerm(mainTerm) : '';
+    const subNormalized = subTerm ? normalizeSearchTerm(subTerm) : '';
+    
+    const mainTokens = mainNormalized ? tokenizeSearch(mainNormalized) : [];
+    const subTokens = subNormalized ? tokenizeSearch(subNormalized) : [];
+    
+    // 모든 검색어 결합
+    const allSearchTerms = [...mainTokens, ...subTokens];
+    
+    // 하위 검색어가 있는지 확인
+    const hasSubSearch = subTokens.length > 0;
     
     const filtered = {};
     const matchedVideos = [];
     
     for (const [mainCat, subCats] of Object.entries(treeData)) {
         filtered[mainCat] = {};
+        
         for (const [subCat, items] of Object.entries(subCats)) {
             const matchedItems = items.filter(item => {
-                const isMatch = item.question.toLowerCase().includes(searchTerm) ||
-                    (item.keywords && item.keywords.toLowerCase().includes(searchTerm));
+                const normQ = normalizeSearchTerm(item.question);
+                const normK = item.keywords ? normalizeSearchTerm(item.keywords) : '';
+                
+                // 하위 검색어가 있으면: 모든 검색어가 질문/키워드에 직접 포함되어야 함 (엄격)
+                if (hasSubSearch) {
+                    const strictMatch = allSearchTerms.every(term => {
+                        return normQ.includes(term) || normK.includes(term);
+                    });
+                    
+                    if (!strictMatch) return false;
+                    
+                } else {
+                    // 주제만 있으면: 카테고리/섹션 매칭도 허용 (유연)
+                    const catMatches = mainTokens.every(term => 
+                        matchesCategory(term, mainCat, null)
+                    );
+                    const secMatches = mainTokens.every(term =>
+                        matchesCategory(term, mainCat, subCat)
+                    );
+                    
+                    const directMatch = mainTokens.every(term => {
+                        return normQ.includes(term) || normK.includes(term);
+                    });
+                    
+                    const categoryMatch = catMatches || secMatches;
+                    const isMatch = directMatch || categoryMatch;
+                    
+                    if (!isMatch) return false;
+                }
                 
                 // 영상 수집
-                if (isMatch && item.video && item.video !== 'nan') {
+                if (item.video && item.video !== 'nan') {
                     matchedVideos.push({
                         question: item.question,
                         video: item.video
                     });
                 }
                 
-                return isMatch;
+                return true;
             });
+            
             if (matchedItems.length > 0) {
                 filtered[mainCat][subCat] = matchedItems;
             }
@@ -393,7 +600,6 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
     if (matchedVideos.length > 0) {
         videoGrid.innerHTML = '';
         
-        // 최대 20개까지만 표시
         const videosToShow = matchedVideos.slice(0, 20);
         
         videosToShow.forEach(item => {
@@ -409,15 +615,13 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
         });
         
         videoResults.classList.add('active');
-        
-        // 제목 업데이트
         document.querySelector('.video-results h3').textContent = 
             `📺 관련 영상 (${matchedVideos.length}개)`;
     } else {
         videoResults.classList.remove('active');
     }
     
-    // 필터링된 데이터로 트리 렌더링
+    // 트리 렌더링
     renderTree(filtered);
     
     // 모든 트리 자동 펼치기
@@ -429,7 +633,11 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
             el.classList.add('active');
         });
     }, 100);
-});
+}
+
+// 양쪽 검색창에 이벤트 리스너 추가
+document.getElementById('mainSearch').addEventListener('input', performSearch);
+document.getElementById('subSearch').addEventListener('input', performSearch);
 </script>
 </body>
 </html>
