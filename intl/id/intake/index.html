@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kuesioner sebelum kunjungan | Klinik Anak Samsung Jarada</title><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1D6C6B">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JWXVM7ZSMR"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JWXVM7ZSMR',{'language':'id'});</script>
+<style>
+:root{--ink:#14261A;--ink2:#3D5145;--ink3:#6B7F80;--paper:#F4F6F2;--card:#fff;--line:#E1E6E0;--green:#1D6C6B;--green2:#2A8683;--greenlt:#E3F0EE;--teal-d:#14504F;--orange:#F59A3C;--amberlt:#FBF0E2;--alert:#A8321E;--alertlt:#FBEAE6;--r:16px;--sh:0 1px 2px rgba(20,60,58,.05),0 10px 28px rgba(20,60,58,.07)}
+@media(prefers-color-scheme:dark){:root{--ink:#E8EFEA;--ink2:#B8C7BE;--ink3:#8FA3A0;--paper:#0F1A17;--card:#17251F;--line:#27382F;--greenlt:#16312F;--amberlt:#2B2417;--alertlt:#3A1C16;--green:#5FB9B6;--green2:#7CCBC8;--teal-d:#0E3A39}}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Noto Sans','Noto Sans Arabic','Noto Sans Thai','Noto Sans JP','Noto Sans SC','Noto Sans TC',Pretendard,'Segoe UI',Tahoma,-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:inherit}.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.top{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-in{height:60px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-weight:800;font-size:16px;letter-spacing:-.2px;display:flex;align-items:center;gap:9px;text-decoration:none}
+.logo i{width:30px;height:30px;border-radius:9px;background:var(--green);display:inline-block;position:relative}
+.logo i::after{content:"";position:absolute;inset:7px 11px 7px 11px;background:#fff;border-radius:2px}
+select,input,textarea{font:inherit;color:var(--ink)}
+.lang-sel{width:auto!important;max-width:55%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 10px;font-size:14px}
+.hero{padding:48px 0 40px;background:linear-gradient(160deg,var(--greenlt),var(--paper) 70%)}
+.hero-in{display:grid;grid-template-columns:1.4fr .8fr;gap:32px;align-items:center}
+.hero h1{font-size:clamp(26px,4.4vw,40px);line-height:1.25;margin:0 0 14px;letter-spacing:-.5px}
+.hero p{font-size:17px;color:var(--ink2);margin:0 0 24px;max-width:56ch}
+.photo{aspect-ratio:4/5;border-radius:24px;overflow:hidden;background:var(--greenlt);box-shadow:var(--sh)}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-block;padding:13px 22px;border-radius:12px;font-weight:700;text-decoration:none;font-size:16px;border:2px solid var(--green);cursor:pointer}
+.btn.p{background:var(--green);color:#fff}.btn.s{color:var(--green);background:transparent}
+.btn:hover{filter:brightness(1.07)}
+section{padding:44px 0}section h2{font-size:26px;margin:0 0 22px;letter-spacing:-.3px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--sh)}
+.card h3{margin:0 0 6px;font-size:17px}.card p{margin:0;color:var(--ink2);font-size:15px}
+.steps{counter-reset:s;display:grid;gap:12px;padding:0;list-style:none}
+.steps li{counter-increment:s;display:flex;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.steps li::before{content:counter(s);flex:none;width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:800}
+.steps b{display:block}.steps span{color:var(--ink2);font-size:15px}
+.price{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:99px;background:var(--amberlt);font-size:13px;font-weight:700}
+.note{background:var(--amberlt);border-radius:12px;padding:14px 16px;font-size:14.5px;color:var(--ink2);margin-top:16px}
+dl.info{display:grid;grid-template-columns:max-content 1fr;gap:10px 18px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin:0}
+dt{font-weight:700}dd{margin:0;color:var(--ink2)}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px}
+summary{cursor:pointer;font-weight:700}details p{margin:10px 0 0;color:var(--ink2)}
+form{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--sh)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fld{margin-bottom:14px}
+label{display:block;font-weight:600;font-size:14px;margin-bottom:5px}
+input[type=text],input[type=email],input[type=date],input[type=number],select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-size:16px}
+textarea{min-height:96px;resize:vertical}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--ink2)}.chk input{margin-top:4px;width:18px;height:18px}
+.radio{display:flex;gap:18px}.radio label{font-weight:500;display:flex;gap:6px;align-items:center;margin:0}
+.hp{position:absolute;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden}
+.msg{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:15px;display:none}
+.msg.ok{display:block;background:var(--greenlt)}.msg.err{display:block;background:var(--alertlt);color:var(--alert)}
+.direct{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.direct a{padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);text-decoration:none;font-weight:600;font-size:14.5px}
+footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px solid var(--line)}
+[dir=rtl] .steps li,[dir=rtl] .chk{flex-direction:row}
+@media(max-width:760px){.hero-in{grid-template-columns:1fr}.photo{max-width:260px}.grid3{grid-template-columns:1fr}.row{grid-template-columns:1fr}dl.info{grid-template-columns:1fr}dt{margin-top:6px}}
+.sec{margin:26px 0 8px;font-size:18px;color:var(--green)}.gr{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;margin-bottom:8px}.gr input{width:100%}.chk{margin:6px 0}.chk span{font-size:15px}.opts{display:flex;gap:18px;flex-wrap:wrap}.opts label{font-weight:500;display:flex;gap:6px;align-items:center;margin:0}.gr .gd{min-width:0}@media(max-width:760px){.gr{grid-template-columns:1fr 1fr}.gr .gd{grid-column:1/-1}}.addb{background:none;border:1px dashed var(--green);color:var(--green);border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer}</style>
+</head><body>
+<header class="top"><div class="wrap top-in"><a class="logo" href="../"><i></i>Klinik Anak Samsung Jarada</a>
+<select class="lang-sel" aria-label="Language" id="ls"><option value="en">English</option><option value="zh">简体中文</option><option value="zh-tw">繁體中文</option><option value="ja">日本語</option><option value="vi">Tiếng Việt</option><option value="th">ไทย</option><option value="id" selected>Bahasa Indonesia</option><option value="es">Español</option><option value="ar">العربية</option><option value="mn">Монгол</option></select></div></header>
+<main><section><div class="wrap"><h1 style="font-size:28px;margin:0 0 8px">Kuesioner sebelum kunjungan</h1><p style="color:var(--ink2);margin:0 0 18px">Kuesioner ini membantu dokter meninjau pertumbuhan anak sebelum kunjungan. Waktunya sekitar 10 menit. Kolom bertanda * wajib diisi; kolom lain isi sebatas yang Anda ketahui.</p>
+<form id="f" novalidate>
+<div class="hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+<div class="row"><div class="fld "><label>Nama atau inisial anak</label><input type="text" name="child_name" maxlength="60"></div><div class="fld "><label>Jenis kelamin anak *</label><div class="radio"><label><input type="radio" name="sex" value="M" required> Laki-laki</label><label><input type="radio" name="sex" value="F"> Perempuan</label></div></div></div><div class="row"><div class="fld "><label>Tanggal lahir *</label><input type="date" name="birth" required></div><div></div></div>
+<h2 class="sec">Riwayat kelahiran</h2><div class="row"><div class="fld "><label>Usia kehamilan saat lahir (minggu)</label><input type="number" name="ga" min="20" max="45"></div><div class="fld "><label>Berat lahir (kg)</label><input type="number" name="bw" step="0.01" min="0.3" max="7"></div></div>
+<div class="fld "><label>Cara lahir</label><div class="opts"><label><input type="radio" name="delivery" value="vaginal"> Normal</label><label><input type="radio" name="delivery" value="c-section"> Operasi caesar</label><label><input type="radio" name="delivery" value="unknown"> Tidak yakin</label></div></div><div class="fld "><label>Komplikasi bayi baru lahir atau perawatan di rumah sakit (jika ada)</label><textarea name="neo" maxlength="1500"></textarea></div>
+<h2 class="sec">Riwayat kesehatan</h2><div class="fld "><label>Penyakit atau operasi sebelumnya</label><textarea name="hist" maxlength="1500"></textarea></div><div class="fld "><label>Obat dan suplemen saat ini (termasuk terapi pertumbuhan atau pubertas)</label><textarea name="meds" maxlength="1500"></textarea></div><div class="fld "><label>Alergi</label><input type="text" name="allergy" ></div>
+<h2 class="sec">Keluarga</h2><div class="fld "><label>Saudara kandung dan urutan lahir</label><input type="text" name="sib" ></div><div class="row"><div class="fld "><label>Tinggi ayah (cm)</label><input type="number" name="father_ht" step="0.1" min="100" max="230"></div><div class="fld "><label>Tinggi ibu (cm)</label><input type="number" name="mother_ht" step="0.1" min="100" max="230"></div></div><div class="row"><div class="fld "><label>Usia ibu saat haid pertama</label><input type="number" name="menarche" step="0.5" min="7" max="25"></div><div class="fld "><label>Pola pertumbuhan ayah</label><select name="father_growth"><option value="">Tidak yakin</option><option value="average">Rata-rata</option><option value="early">Tumbuh lebih awal</option><option value="late">Tumbuh lambat (masih tinggi setelah 18 tahun)</option></select></div></div><div class="fld "><label>Riwayat keluarga (diabetes, tiroid, obesitas, pubertas dini, tubuh pendek…)</label><textarea name="family_hx" maxlength="1500"></textarea></div>
+<h2 class="sec">Catatan pertumbuhan</h2><p style="color:var(--ink2);font-size:14.5px;margin-top:0">Tambahkan pengukuran sebelumnya beserta tanggal (klinik, pemeriksaan sekolah, atau di rumah). Semakin banyak catatan, semakin berguna.</p><div id="gwrap"></div>
+<button type="button" class="addb" id="addrow">+ Tambah baris</button>
+<h2 class="sec">Pubertas</h2><p style="color:var(--ink2);font-size:14.5px;margin-top:0">Tanda yang Anda perhatikan</p><label class="chk"><input type="checkbox" name="pub_signs" value="Payudara mulai tumbuh (perempuan)"><span>Payudara mulai tumbuh (perempuan)</span></label><label class="chk"><input type="checkbox" name="pub_signs" value="Haid pertama (perempuan)"><span>Haid pertama (perempuan)</span></label><label class="chk"><input type="checkbox" name="pub_signs" value="Suara berubah (laki-laki)"><span>Suara berubah (laki-laki)</span></label><label class="chk"><input type="checkbox" name="pub_signs" value="Rambut kemaluan atau ketiak"><span>Rambut kemaluan atau ketiak</span></label><label class="chk"><input type="checkbox" name="pub_signs" value="Bau badan atau jerawat"><span>Bau badan atau jerawat</span></label><label class="chk"><input type="checkbox" name="pub_signs" value="Belum ada"><span>Belum ada</span></label><div class="fld "><label>Usia saat pertama kali terlihat</label><input type="text" name="pub_age" maxlength="30"></div>
+<h2 class="sec">Pemeriksaan sebelumnya</h2><div class="fld "><label>Rontgen usia tulang, tes darah, atau hasil lain (ringkasan)</label><textarea name="tests" maxlength="1500"></textarea></div><div class="fld"><label>Lampirkan berkas (opsional, maksimal 3 berkas, masing-masing 4 MB)</label><input type="file" id="files" accept="image/*,application/pdf" multiple></div>
+<h2 class="sec">Kehidupan sehari-hari</h2><div class="fld "><label>Nafsu makan dan pola makan (camilan, minuman manis)</label><textarea name="diet" maxlength="1500"></textarea></div><div class="row"><div class="fld "><label>Tidur (jam tidur dan bangun)</label><input type="text" name="sleep" maxlength="100"></div><div class="fld "><label>Olahraga (jenis, kali per minggu)</label><input type="text" name="exercise" maxlength="200"></div></div><div class="fld "><label>Waktu layar (menit per hari)</label><input type="number" name="screen" min="0" max="1440"></div>
+<h2 class="sec">Kekhawatiran Anda</h2><div class="fld "><label>Apa yang paling Anda khawatirkan dan ingin ketahui?</label><textarea name="goal" maxlength="1500"></textarea></div><div class="fld "><label>Pengobatan atau kunjungan sebelumnya terkait masalah ini</label><textarea name="prev_tx" maxlength="1500"></textarea></div>
+<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>Saya setuju Klinik Anak Samsung Jarada mengumpulkan dan menggunakan informasi pribadi dan kesehatan yang saya isi di sini, termasuk milik anak saya, untuk meninjau dan merencanakan perawatan, dan bahwa data diproses di Korea. Saya dapat menarik persetujuan kapan saja dengan menghubungi klinik. *</span></label></div>
+<button class="btn p" type="submit" id="sb">Kirim kuesioner</button><div id="res" class="msg" role="status"></div>
+<h3 style="margin:22px 0 4px;font-size:15px">Hubungi kami langsung</h3><div class="direct"><a href="tel:+8225230111">☎ +82-2-523-0111</a>
+<a href="mailto:ha5857@gmail.com">✉ ha5857@gmail.com</a>
+<span class="direct-id"><a data-m="whatsapp" href="#">WhatsApp: @jaradacare</a></span></div>
+</form></div></section></main>
+<footer><div class="wrap"><p>Halaman ini berisi informasi umum, bukan nasihat medis atau diagnosis. Hasil pemeriksaan dan pengobatan berbeda pada setiap anak dan tidak dapat dijamin.</p></div></footer>
+<script>
+(function(){
+var C={"endpoint": "https://script.google.com/macros/s/AKfycbxqUfqf1Wk36XI_0hdOOqZIhMHzNk99bvadmJzlN5wmo34oO32knxuJfpZoPgzREwk/exec", "lang": "id", "ok": "Terima kasih. Kuesioner Anda telah diterima (ID: {id}). Tim kami akan meninjau dan menghubungi Anda.", "err": "Maaf, pengiriman gagal. Mohon hubungi kami langsung lewat telepon atau email di bawah.", "req": "Mohon lengkapi kolom yang wajib diisi.", "sending": "Mengirim…", "submit": "Kirim kuesioner", "gd": "Tanggal", "gh": "Tinggi (cm)", "gwt": "Berat (kg)"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb'),gw=document.getElementById('gwrap');
+var q=new URLSearchParams(location.search),iid=(q.get('id')||'').replace(/[^A-Za-z0-9-]/g,'');
+document.getElementById('ls').onchange=function(){location.href='../../'+this.value+'/intake/'+location.search};
+function ev(n,p){try{gtag('event',n,Object.assign({language:C.lang},p||{}))}catch(e){}}
+function addRow(){var d=document.createElement('div');d.className='gr';d.innerHTML='<input type="date" class="gd" aria-label="'+C.gd+'"><input type="number" step="0.1" min="30" max="230" class="gh" placeholder="'+C.gh+'" aria-label="'+C.gh+'"><input type="number" step="0.1" min="2" max="200" class="gwt" placeholder="'+C.gwt+'" aria-label="'+C.gwt+'">';gw.appendChild(d)}
+for(var i=0;i<4;i++)addRow();document.getElementById('addrow').onclick=addRow;
+function rd(file){return new Promise(function(ok,no){var r=new FileReader();r.onload=function(){ok({name:file.name,type:file.type,data:String(r.result).split(',')[1]})};r.onerror=no;r.readAsDataURL(file)})}
+f.addEventListener('submit',async function(e){
+e.preventDefault();res.className='msg';
+var fd=new FormData(f),o={};fd.forEach(function(v,k){if(k!=='pub_signs')o[k]=v});
+if(o.website)return;
+if(!o.sex||!o.birth||!o.consent){res.className='msg err';res.textContent=C.req;return}
+o.pub_signs=[].slice.call(f.querySelectorAll('[name=pub_signs]:checked')).map(function(x){return x.value});
+o.growth=[].slice.call(gw.children).map(function(r){return {date:r.querySelector('.gd').value,ht:r.querySelector('.gh').value,wt:r.querySelector('.gwt').value}}).filter(function(g){return g.date&&(g.ht||g.wt)});
+var fl=[].slice.call(document.getElementById('files').files).slice(0,3);
+for(var i=0;i<fl.length;i++){if(fl[i].size>4*1024*1024){res.className='msg err';res.textContent=C.req+' (≤4 MB)';return}}
+sb.disabled=true;sb.textContent=C.sending;
+try{
+o.files=await Promise.all(fl.map(rd));o.kind='intake';o.id=iid;o.page_lang=C.lang;
+if(!C.endpoint)throw new Error('no endpoint');
+var r=await fetch(C.endpoint,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(o)});
+var j=await r.json();if(!j.ok)throw new Error(j.error||'fail');
+res.className='msg ok';res.textContent=C.ok.replace('{id}',j.id);f.reset();ev('intake_submit',{value:1});window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+}catch(x){res.className='msg err';res.textContent=C.err;ev('intake_error')}
+sb.disabled=false;sb.textContent=C.submit;
+});
+})();
+</script></body></html>
