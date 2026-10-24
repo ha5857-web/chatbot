@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>プライバシーに関するお知らせ | サムスン・ジャラダ小児青少年科</title><meta name="robots" content="noindex,follow"><meta name="theme-color" content="#1D6C6B">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<style>
+:root{--ink:#14261A;--ink2:#3D5145;--ink3:#6B7F80;--paper:#F4F6F2;--card:#fff;--line:#E1E6E0;--green:#1D6C6B;--green2:#2A8683;--greenlt:#E3F0EE;--teal-d:#14504F;--orange:#F59A3C;--amberlt:#FBF0E2;--alert:#A8321E;--alertlt:#FBEAE6;--r:16px;--sh:0 1px 2px rgba(20,60,58,.05),0 10px 28px rgba(20,60,58,.07)}
+@media(prefers-color-scheme:dark){:root{--ink:#E8EFEA;--ink2:#B8C7BE;--ink3:#8FA3A0;--paper:#0F1A17;--card:#17251F;--line:#27382F;--greenlt:#16312F;--amberlt:#2B2417;--alertlt:#3A1C16;--green:#5FB9B6;--green2:#7CCBC8;--teal-d:#0E3A39}}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Noto Sans','Noto Sans Arabic','Noto Sans Thai','Noto Sans JP','Noto Sans SC','Noto Sans TC',Pretendard,'Segoe UI',Tahoma,-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:inherit}.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.top{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-in{height:60px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-weight:800;font-size:16px;letter-spacing:-.2px;display:flex;align-items:center;gap:9px;text-decoration:none}
+.logo i{width:30px;height:30px;border-radius:9px;background:var(--green);display:inline-block;position:relative}
+.logo i::after{content:"";position:absolute;inset:7px 11px 7px 11px;background:#fff;border-radius:2px}
+select,input,textarea{font:inherit;color:var(--ink)}
+.lang-sel{width:auto!important;max-width:55%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 10px;font-size:14px}
+.hero{padding:48px 0 40px;background:linear-gradient(160deg,var(--greenlt),var(--paper) 70%)}
+.hero-in{display:grid;grid-template-columns:1.4fr .8fr;gap:32px;align-items:center}
+.hero h1{font-size:clamp(26px,4.4vw,40px);line-height:1.25;margin:0 0 14px;letter-spacing:-.5px}
+.hero p{font-size:17px;color:var(--ink2);margin:0 0 24px;max-width:56ch}
+.photo{aspect-ratio:4/5;border-radius:24px;overflow:hidden;background:var(--greenlt);box-shadow:var(--sh)}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-block;padding:13px 22px;border-radius:12px;font-weight:700;text-decoration:none;font-size:16px;border:2px solid var(--green);cursor:pointer}
+.btn.p{background:var(--green);color:#fff}.btn.s{color:var(--green);background:transparent}
+.btn:hover{filter:brightness(1.07)}
+section{padding:44px 0}section h2{font-size:26px;margin:0 0 22px;letter-spacing:-.3px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--sh)}
+.card h3{margin:0 0 6px;font-size:17px}.card p{margin:0;color:var(--ink2);font-size:15px}
+.steps{counter-reset:s;display:grid;gap:12px;padding:0;list-style:none}
+.steps li{counter-increment:s;display:flex;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.steps li::before{content:counter(s);flex:none;width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:800}
+.steps b{display:block}.steps span{color:var(--ink2);font-size:15px}
+.price{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:99px;background:var(--amberlt);font-size:13px;font-weight:700}
+.note{background:var(--amberlt);border-radius:12px;padding:14px 16px;font-size:14.5px;color:var(--ink2);margin-top:16px}
+dl.info{display:grid;grid-template-columns:max-content 1fr;gap:10px 18px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin:0}
+dt{font-weight:700}dd{margin:0;color:var(--ink2)}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px}
+summary{cursor:pointer;font-weight:700}details p{margin:10px 0 0;color:var(--ink2)}
+form{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--sh)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fld{margin-bottom:14px}
+label{display:block;font-weight:600;font-size:14px;margin-bottom:5px}
+input[type=text],input[type=email],input[type=date],input[type=number],select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-size:16px}
+textarea{min-height:96px;resize:vertical}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--ink2)}.chk input{margin-top:4px;width:18px;height:18px}
+.radio{display:flex;gap:18px}.radio label{font-weight:500;display:flex;gap:6px;align-items:center;margin:0}
+.hp{position:absolute;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden}
+.msg{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:15px;display:none}
+.msg.ok{display:block;background:var(--greenlt)}.msg.err{display:block;background:var(--alertlt);color:var(--alert)}
+.direct{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.direct a{padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);text-decoration:none;font-weight:600;font-size:14.5px}
+footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px solid var(--line)}
+[dir=rtl] .steps li,[dir=rtl] .chk{flex-direction:row}
+@media(max-width:760px){.hero-in{grid-template-columns:1fr}.photo{max-width:260px}.grid3{grid-template-columns:1fr}.row{grid-template-columns:1fr}dl.info{grid-template-columns:1fr}dt{margin-top:6px}}
+.sec{margin:24px 0 6px;font-size:17px;color:var(--green)}</style></head><body>
+<header class="top"><div class="wrap top-in"><a class="logo" href="../"><i></i>サムスン・ジャラダ小児青少年科</a></div></header>
+<main><section><div class="wrap" style="max-width:760px"><h1 style="font-size:28px;margin:0 0 6px">プライバシーに関するお知らせ</h1><p style="color:var(--ink2);margin:0 0 10px">最終更新:2026-10-24</p><h2 class="sec">1. 運営者</h2><p style="margin:0 0 6px">サムスン・ジャラダ小児青少年科(삼성자라다 소아청소년과)、Rm 301, Bangbae Hospital, 115, Bangbae-ro, Seocho-gu, Seoul, Republic of Korea (06680) · 서울특별시 서초구 방배로 115, 방배병원 301호。連絡先:ha5857@gmail.com · +82-2-523-0111。当ウェブサイトからご提出いただく情報について、当院が責任を負います。</p><h2 class="sec">2. 取得する情報</h2><p style="margin:0 0 6px">お問い合わせフォーム:保護者のお名前、居住国、希望する連絡手段とID、メールアドレス、お子様の性別・生年月日・身長・体重、ご両親の身長、主なお悩み、メッセージ、添付された画像やPDFファイル。詳細な事前問診票:出生・既往歴、服薬、アレルギー、家族歴、成長記録、思春期の兆候、検査結果、生活習慣。お子様の健康に関する情報を含み、これは機微な情報です。</p><h2 class="sec">3. 利用目的</h2><p style="margin:0 0 6px">お問い合わせへの返信、受診前のお子様の情報の確認、受診や遠隔フォローアップの計画、ご選択いただいた連絡手段での連絡のために利用します。広告には利用せず、販売することもありません。</p><h2 class="sec">4. 保管場所とアクセス</h2><p style="margin:0 0 6px">情報は当院が利用するGoogleのサービス(Googleスプレッドシート、Googleドライブ、Gmail)に保管されます。Googleのサーバーは韓国国外(例:米国)にある場合があり、情報が韓国国外へ移転され処理されることがあります。アクセスは当院の権限のあるスタッフに限られます。フォームを送信することで、この移転に同意したものとみなされます。</p><h2 class="sec">5. 保管期間</h2><p style="margin:0 0 6px">お問い合わせの対応に必要な期間のみ保管します。お子様が当院の患者となった場合、関連情報は韓国の法令が定める期間、診療記録の一部として保管されます。受診に至らなかったお問い合わせは、いつでも削除を依頼できます。</p><h2 class="sec">6. お客様の権利</h2><p style="margin:0 0 6px">ha5857@gmail.com へご連絡いただくことで、いつでも情報の閲覧・訂正・削除、または同意の撤回を求めることができます。同意の撤回は、撤回前に行われた処理には影響しません。同意いただけない場合はフォームを処理できませんが、お電話やメールでご連絡いただけます。</p><h2 class="sec">7. お子様の情報</h2><p style="margin:0 0 6px">お子様に関する情報は、保護者または法定代理人が、提供する権限があることを確認のうえ提出してください。</p><h2 class="sec">8. ウェブサイトの分析</h2><p style="margin:0 0 6px">当サイトはGoogleアナリティクスで訪問数とフォーム送信数(ページ、言語、参照元)を集計します。個人を特定する目的では使用しません。</p><h2 class="sec">9. 緊急時と変更</h2><p style="margin:0 0 6px">このフォームは緊急時用ではありません。お子様が重い症状の場合は、お住まいの地域の救急サービスにご連絡ください。本お知らせは更新されることがあり、日付は上部に表示されます。</p>
+<p style="margin-top:28px"><a class="btn" href="../">&larr; 戻る</a></p></div></section></main>
+<footer><div class="wrap"><p>このページは一般的な情報であり、医療上の助言や診断ではありません。診察や治療の結果はお子さんごとに異なり、保証できません。</p></div></footer></body></html>

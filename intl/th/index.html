@@ -112,7 +112,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <div class="fld"><label>ข้อกังวลหลัก *</label><select name="concern" required><option value="short">ตัวเตี้ย / โตช้า</option><option value="puberty">เข้าสู่วัยรุ่นเร็ว</option><option value="obesity">โรคอ้วน / เมตาบอลิซึมในเด็ก</option><option value="other">อื่น ๆ</option></select></div>
 <div class="fld"><label>ข้อมูลอื่นที่ต้องการแจ้ง</label><textarea name="message" maxlength="2000"></textarea></div>
 <div class="fld"><label>แนบไฟล์ (ไม่บังคับ)</label><input type="file" id="files" accept="image/*,application/pdf" multiple></div>
-<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>ข้าพเจ้ายินยอมให้คลินิกกุมารเวชซัมซุง จาราดา เก็บรวบรวมและใช้ข้อมูลส่วนบุคคลและข้อมูลสุขภาพที่กรอกไว้ รวมถึงของบุตร เพื่อตอบกลับคำถามนี้ และประมวลผลในประเทศเกาหลี ข้าพเจ้าสามารถเพิกถอนความยินยอมได้ทุกเมื่อโดยติดต่อคลินิก *</span></label></div>
+<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>ข้าพเจ้ายินยอมให้คลินิกกุมารเวชซัมซุง จาราดา เก็บรวบรวมและใช้ข้อมูลส่วนบุคคลและข้อมูลสุขภาพที่กรอกไว้ รวมถึงของบุตร เพื่อตอบกลับคำถามนี้ และประมวลผลในประเทศเกาหลี ข้าพเจ้าสามารถเพิกถอนความยินยอมได้ทุกเมื่อโดยติดต่อคลินิก *</span></label><p style="margin:4px 0 0;font-size:13.5px"><a href="privacy/" target="_blank" rel="noopener">อ่านประกาศความเป็นส่วนตัว</a></p></div>
 <button class="btn p" type="submit" id="sb">ส่งคำถาม</button>
 <div id="res" class="msg" role="status"></div>
 <h3 style="margin:22px 0 4px;font-size:15px">ติดต่อเราโดยตรง</h3><div class="direct"><a href="tel:+8225230111">☎ +82-2-523-0111</a>
@@ -120,7 +120,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <span class="direct-id"><a data-m="whatsapp" href="#">WhatsApp: @jaradacare</a></span></div>
 </form></div></section>
 </main>
-<footer><div class="wrap"><p>หน้านี้เป็นข้อมูลทั่วไป ไม่ใช่คำแนะนำทางการแพทย์หรือการวินิจฉัย ผลการตรวจและการรักษาแตกต่างกันในเด็กแต่ละคนและไม่สามารถรับประกันได้</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a></p></div></footer>
+<footer><div class="wrap"><p>หน้านี้เป็นข้อมูลทั่วไป ไม่ใช่คำแนะนำทางการแพทย์หรือการวินิจฉัย ผลการตรวจและการรักษาแตกต่างกันในเด็กแต่ละคนและไม่สามารถรับประกันได้</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a> · <a href="privacy/">ประกาศความเป็นส่วนตัว</a></p></div></footer>
 <script>
 (function(){
 var C={"endpoint": "https://script.google.com/macros/s/AKfycbxqUfqf1Wk36XI_0hdOOqZIhMHzNk99bvadmJzlN5wmo34oO32knxuJfpZoPgzREwk/exec", "lang": "th", "ok": "ขอบคุณค่ะ/ครับ เราได้รับคำถามของคุณแล้ว (หมายเลข: {id}) หลังตรวจสอบ เราจะตอบกลับผ่านช่องทางที่คุณเลือก", "err": "ขออภัย ส่งไม่สำเร็จ โปรดติดต่อเราโดยตรงทางโทรศัพท์หรืออีเมลด้านล่าง", "req": "โปรดกรอกช่องที่จำเป็น", "sending": "กำลังส่ง…", "submit": "ส่งคำถาม"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb');

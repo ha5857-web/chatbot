@@ -112,7 +112,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <div class="fld"><label>Mối quan tâm chính *</label><select name="concern" required><option value="short">Thấp còn / chậm lớn</option><option value="puberty">Dậy thì sớm</option><option value="obesity">Béo phì / chuyển hóa ở trẻ</option><option value="other">Khác</option></select></div>
 <div class="fld"><label>Thông tin khác cần cho chúng tôi biết</label><textarea name="message" maxlength="2000"></textarea></div>
 <div class="fld"><label>Đính kèm tệp (không bắt buộc)</label><input type="file" id="files" accept="image/*,application/pdf" multiple></div>
-<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>Tôi đồng ý để Phòng khám Nhi khoa Samsung Jarada thu thập và sử dụng thông tin cá nhân và sức khỏe được nhập tại đây, bao gồm thông tin của con tôi, để phản hồi yêu cầu này, và việc xử lý được thực hiện tại Hàn Quốc. Tôi có thể rút lại sự đồng ý bất cứ lúc nào bằng cách liên hệ phòng khám. *</span></label></div>
+<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>Tôi đồng ý để Phòng khám Nhi khoa Samsung Jarada thu thập và sử dụng thông tin cá nhân và sức khỏe được nhập tại đây, bao gồm thông tin của con tôi, để phản hồi yêu cầu này, và việc xử lý được thực hiện tại Hàn Quốc. Tôi có thể rút lại sự đồng ý bất cứ lúc nào bằng cách liên hệ phòng khám. *</span></label><p style="margin:4px 0 0;font-size:13.5px"><a href="privacy/" target="_blank" rel="noopener">Đọc thông báo quyền riêng tư</a></p></div>
 <button class="btn p" type="submit" id="sb">Gửi yêu cầu</button>
 <div id="res" class="msg" role="status"></div>
 <h3 style="margin:22px 0 4px;font-size:15px">Liên hệ trực tiếp</h3><div class="direct"><a href="tel:+8225230111">☎ +82-2-523-0111</a>
@@ -120,7 +120,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <span class="direct-id"><a data-m="whatsapp" href="#">WhatsApp: @jaradacare</a></span></div>
 </form></div></section>
 </main>
-<footer><div class="wrap"><p>Trang này chỉ cung cấp thông tin chung, không phải tư vấn y tế hay chẩn đoán. Kết quả khám và điều trị khác nhau ở mỗi trẻ và không thể được đảm bảo.</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a></p></div></footer>
+<footer><div class="wrap"><p>Trang này chỉ cung cấp thông tin chung, không phải tư vấn y tế hay chẩn đoán. Kết quả khám và điều trị khác nhau ở mỗi trẻ và không thể được đảm bảo.</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a> · <a href="privacy/">Thông báo quyền riêng tư</a></p></div></footer>
 <script>
 (function(){
 var C={"endpoint": "https://script.google.com/macros/s/AKfycbxqUfqf1Wk36XI_0hdOOqZIhMHzNk99bvadmJzlN5wmo34oO32knxuJfpZoPgzREwk/exec", "lang": "vi", "ok": "Cảm ơn bạn. Yêu cầu đã được tiếp nhận (Mã: {id}). Sau khi xem xét, chúng tôi sẽ phản hồi qua cách liên hệ bạn đã chọn.", "err": "Rất tiếc, gửi không thành công. Vui lòng liên hệ trực tiếp qua điện thoại hoặc email bên dưới.", "req": "Vui lòng điền các mục bắt buộc.", "sending": "Đang gửi…", "submit": "Gửi yêu cầu"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb');

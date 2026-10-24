@@ -112,7 +112,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <div class="fld"><label>Motivo principal *</label><select name="concern" required><option value="short">Talla baja / crecimiento lento</option><option value="puberty">Pubertad precoz</option><option value="obesity">Obesidad infantil / metabólico</option><option value="other">Otro</option></select></div>
 <div class="fld"><label>Algo más que debamos saber</label><textarea name="message" maxlength="2000"></textarea></div>
 <div class="fld"><label>Adjuntar archivos (opcional)</label><input type="file" id="files" accept="image/*,application/pdf" multiple></div>
-<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>Acepto que la Clínica Pediátrica Samsung Jarada recopile y use la información personal y de salud introducida aquí, incluida la de mi hijo/a, para responder a esta consulta, y que se procese en Corea. Puedo retirar mi consentimiento en cualquier momento contactando con la clínica. *</span></label></div>
+<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>Acepto que la Clínica Pediátrica Samsung Jarada recopile y use la información personal y de salud introducida aquí, incluida la de mi hijo/a, para responder a esta consulta, y que se procese en Corea. Puedo retirar mi consentimiento en cualquier momento contactando con la clínica. *</span></label><p style="margin:4px 0 0;font-size:13.5px"><a href="privacy/" target="_blank" rel="noopener">Leer el aviso de privacidad</a></p></div>
 <button class="btn p" type="submit" id="sb">Enviar consulta</button>
 <div id="res" class="msg" role="status"></div>
 <h3 style="margin:22px 0 4px;font-size:15px">Contacto directo</h3><div class="direct"><a href="tel:+8225230111">☎ +82-2-523-0111</a>
@@ -120,7 +120,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <span class="direct-id"><a data-m="whatsapp" href="#">WhatsApp: @jaradacare</a></span></div>
 </form></div></section>
 </main>
-<footer><div class="wrap"><p>Esta página ofrece información general, no consejo médico ni diagnóstico. Los resultados del examen y del tratamiento varían en cada niño y no pueden garantizarse.</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a></p></div></footer>
+<footer><div class="wrap"><p>Esta página ofrece información general, no consejo médico ni diagnóstico. Los resultados del examen y del tratamiento varían en cada niño y no pueden garantizarse.</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a> · <a href="privacy/">Aviso de privacidad</a></p></div></footer>
 <script>
 (function(){
 var C={"endpoint": "https://script.google.com/macros/s/AKfycbxqUfqf1Wk36XI_0hdOOqZIhMHzNk99bvadmJzlN5wmo34oO32knxuJfpZoPgzREwk/exec", "lang": "es", "ok": "Gracias. Hemos recibido su consulta (ID: {id}). Tras revisarla, le responderemos por el medio de contacto que eligió.", "err": "Lo sentimos, el envío falló. Contáctenos directamente por teléfono o correo electrónico más abajo.", "req": "Complete los campos obligatorios.", "sending": "Enviando…", "submit": "Enviar consulta"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb');

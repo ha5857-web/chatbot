@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thông báo quyền riêng tư | Phòng khám Nhi khoa Samsung Jarada</title><meta name="robots" content="noindex,follow"><meta name="theme-color" content="#1D6C6B">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<style>
+:root{--ink:#14261A;--ink2:#3D5145;--ink3:#6B7F80;--paper:#F4F6F2;--card:#fff;--line:#E1E6E0;--green:#1D6C6B;--green2:#2A8683;--greenlt:#E3F0EE;--teal-d:#14504F;--orange:#F59A3C;--amberlt:#FBF0E2;--alert:#A8321E;--alertlt:#FBEAE6;--r:16px;--sh:0 1px 2px rgba(20,60,58,.05),0 10px 28px rgba(20,60,58,.07)}
+@media(prefers-color-scheme:dark){:root{--ink:#E8EFEA;--ink2:#B8C7BE;--ink3:#8FA3A0;--paper:#0F1A17;--card:#17251F;--line:#27382F;--greenlt:#16312F;--amberlt:#2B2417;--alertlt:#3A1C16;--green:#5FB9B6;--green2:#7CCBC8;--teal-d:#0E3A39}}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Noto Sans','Noto Sans Arabic','Noto Sans Thai','Noto Sans JP','Noto Sans SC','Noto Sans TC',Pretendard,'Segoe UI',Tahoma,-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:inherit}.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.top{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-in{height:60px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-weight:800;font-size:16px;letter-spacing:-.2px;display:flex;align-items:center;gap:9px;text-decoration:none}
+.logo i{width:30px;height:30px;border-radius:9px;background:var(--green);display:inline-block;position:relative}
+.logo i::after{content:"";position:absolute;inset:7px 11px 7px 11px;background:#fff;border-radius:2px}
+select,input,textarea{font:inherit;color:var(--ink)}
+.lang-sel{width:auto!important;max-width:55%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 10px;font-size:14px}
+.hero{padding:48px 0 40px;background:linear-gradient(160deg,var(--greenlt),var(--paper) 70%)}
+.hero-in{display:grid;grid-template-columns:1.4fr .8fr;gap:32px;align-items:center}
+.hero h1{font-size:clamp(26px,4.4vw,40px);line-height:1.25;margin:0 0 14px;letter-spacing:-.5px}
+.hero p{font-size:17px;color:var(--ink2);margin:0 0 24px;max-width:56ch}
+.photo{aspect-ratio:4/5;border-radius:24px;overflow:hidden;background:var(--greenlt);box-shadow:var(--sh)}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-block;padding:13px 22px;border-radius:12px;font-weight:700;text-decoration:none;font-size:16px;border:2px solid var(--green);cursor:pointer}
+.btn.p{background:var(--green);color:#fff}.btn.s{color:var(--green);background:transparent}
+.btn:hover{filter:brightness(1.07)}
+section{padding:44px 0}section h2{font-size:26px;margin:0 0 22px;letter-spacing:-.3px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--sh)}
+.card h3{margin:0 0 6px;font-size:17px}.card p{margin:0;color:var(--ink2);font-size:15px}
+.steps{counter-reset:s;display:grid;gap:12px;padding:0;list-style:none}
+.steps li{counter-increment:s;display:flex;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.steps li::before{content:counter(s);flex:none;width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:800}
+.steps b{display:block}.steps span{color:var(--ink2);font-size:15px}
+.price{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:99px;background:var(--amberlt);font-size:13px;font-weight:700}
+.note{background:var(--amberlt);border-radius:12px;padding:14px 16px;font-size:14.5px;color:var(--ink2);margin-top:16px}
+dl.info{display:grid;grid-template-columns:max-content 1fr;gap:10px 18px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin:0}
+dt{font-weight:700}dd{margin:0;color:var(--ink2)}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px}
+summary{cursor:pointer;font-weight:700}details p{margin:10px 0 0;color:var(--ink2)}
+form{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--sh)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fld{margin-bottom:14px}
+label{display:block;font-weight:600;font-size:14px;margin-bottom:5px}
+input[type=text],input[type=email],input[type=date],input[type=number],select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-size:16px}
+textarea{min-height:96px;resize:vertical}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--ink2)}.chk input{margin-top:4px;width:18px;height:18px}
+.radio{display:flex;gap:18px}.radio label{font-weight:500;display:flex;gap:6px;align-items:center;margin:0}
+.hp{position:absolute;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden}
+.msg{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:15px;display:none}
+.msg.ok{display:block;background:var(--greenlt)}.msg.err{display:block;background:var(--alertlt);color:var(--alert)}
+.direct{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.direct a{padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);text-decoration:none;font-weight:600;font-size:14.5px}
+footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px solid var(--line)}
+[dir=rtl] .steps li,[dir=rtl] .chk{flex-direction:row}
+@media(max-width:760px){.hero-in{grid-template-columns:1fr}.photo{max-width:260px}.grid3{grid-template-columns:1fr}.row{grid-template-columns:1fr}dl.info{grid-template-columns:1fr}dt{margin-top:6px}}
+.sec{margin:24px 0 6px;font-size:17px;color:var(--green)}</style></head><body>
+<header class="top"><div class="wrap top-in"><a class="logo" href="../"><i></i>Phòng khám Nhi khoa Samsung Jarada</a></div></header>
+<main><section><div class="wrap" style="max-width:760px"><h1 style="font-size:28px;margin:0 0 6px">Thông báo quyền riêng tư</h1><p style="color:var(--ink2);margin:0 0 10px">Cập nhật lần cuối: 2026-10-24</p><h2 class="sec">1. Chúng tôi là ai</h2><p style="margin:0 0 6px">Phòng khám Nhi khoa Samsung Jarada (삼성자라다 소아청소년과), Rm 301, Bangbae Hospital, 115, Bangbae-ro, Seocho-gu, Seoul, Republic of Korea (06680) · 서울특별시 서초구 방배로 115, 방배병원 301호. Liên hệ: ha5857@gmail.com · +82-2-523-0111. Chúng tôi chịu trách nhiệm về thông tin bạn gửi qua trang web này.</p><h2 class="sec">2. Chúng tôi thu thập gì</h2><p style="margin:0 0 6px">Biểu mẫu yêu cầu: họ tên cha mẹ hoặc người giám hộ, quốc gia cư trú, cách liên hệ ưa thích và ID, email, giới tính, ngày sinh, chiều cao, cân nặng của trẻ, chiều cao của cha mẹ, mối quan tâm chính, tin nhắn và các ảnh hoặc tệp PDF bạn đính kèm. Bảng câu hỏi chi tiết trước khi khám: tiền sử sinh và bệnh, thuốc đang dùng, dị ứng, tiền sử gia đình, ghi chép tăng trưởng, dấu hiệu dậy thì, kết quả xét nghiệm và thói quen sinh hoạt. Trong đó có thông tin sức khỏe của trẻ, là thông tin nhạy cảm.</p><h2 class="sec">3. Mục đích sử dụng</h2><p style="margin:0 0 6px">Để trả lời yêu cầu của bạn, xem xét thông tin của trẻ trước khi khám, lên kế hoạch khám hoặc theo dõi từ xa, và liên lạc với bạn qua cách liên hệ bạn đã chọn. Chúng tôi không dùng cho quảng cáo và không bán thông tin.</p><h2 class="sec">4. Nơi lưu trữ và ai được truy cập</h2><p style="margin:0 0 6px">Thông tin được lưu trong các dịch vụ Google mà phòng khám sử dụng (Google Sheets, Google Drive và Gmail). Máy chủ của Google có thể nằm ngoài Hàn Quốc, ví dụ tại Hoa Kỳ, nên thông tin của bạn có thể được chuyển và xử lý bên ngoài Hàn Quốc. Chỉ nhân viên phòng khám được ủy quyền mới được truy cập. Khi gửi biểu mẫu, bạn đồng ý với việc chuyển này.</p><h2 class="sec">5. Thời gian lưu giữ</h2><p style="margin:0 0 6px">Chúng tôi chỉ lưu thông tin trong thời gian cần thiết để xử lý yêu cầu. Nếu trẻ trở thành bệnh nhân của chúng tôi, thông tin liên quan được lưu như một phần hồ sơ bệnh án trong thời hạn luật Hàn Quốc quy định. Bạn có thể yêu cầu xóa bất kỳ yêu cầu nào chưa dẫn đến lượt khám vào bất cứ lúc nào.</p><h2 class="sec">6. Quyền của bạn</h2><p style="margin:0 0 6px">Bạn có thể yêu cầu xem, chỉnh sửa hoặc xóa thông tin, hoặc rút lại sự đồng ý bất cứ lúc nào bằng cách liên hệ ha5857@gmail.com. Việc rút lại không ảnh hưởng đến xử lý đã thực hiện trước đó. Nếu bạn không đồng ý, chúng tôi không thể xử lý biểu mẫu, nhưng bạn vẫn có thể liên hệ qua điện thoại hoặc email.</p><h2 class="sec">7. Thông tin của trẻ em</h2><p style="margin:0 0 6px">Thông tin về trẻ phải do cha mẹ hoặc người giám hộ hợp pháp gửi, và họ xác nhận có quyền cung cấp thông tin đó.</p><h2 class="sec">8. Phân tích trang web</h2><p style="margin:0 0 6px">Trang web dùng Google Analytics để đếm lượt truy cập và lượt gửi biểu mẫu (trang, ngôn ngữ và trang giới thiệu). Không dùng để nhận dạng cá nhân bạn.</p><h2 class="sec">9. Trường hợp khẩn cấp và thay đổi</h2><p style="margin:0 0 6px">Biểu mẫu này không dành cho trường hợp khẩn cấp. Nếu trẻ bệnh nặng, hãy liên hệ dịch vụ cấp cứu tại địa phương. Chúng tôi có thể cập nhật thông báo này; ngày cập nhật hiển thị ở phía trên.</p>
+<p style="margin-top:28px"><a class="btn" href="../">&larr; Quay lại</a></p></div></section></main>
+<footer><div class="wrap"><p>Trang này chỉ cung cấp thông tin chung, không phải tư vấn y tế hay chẩn đoán. Kết quả khám và điều trị khác nhau ở mỗi trẻ và không thể được đảm bảo.</p></div></footer></body></html>

@@ -112,7 +112,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <div class="fld"><label>主なご相談内容 *</label><select name="concern" required><option value="short">低身長・成長が遅い</option><option value="puberty">思春期早発症</option><option value="obesity">小児肥満・代謝</option><option value="other">その他</option></select></div>
 <div class="fld"><label>その他お伝えしたいこと</label><textarea name="message" maxlength="2000"></textarea></div>
 <div class="fld"><label>ファイル添付(任意)</label><input type="file" id="files" accept="image/*,application/pdf" multiple></div>
-<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>サムスン・ジャラダ小児青少年科が、ここに入力した個人情報および健康情報(お子さんの情報を含む)を、この問い合わせへの対応のために収集・利用し、韓国で処理することに同意します。同意はクリニックへの連絡でいつでも撤回できます。*</span></label></div>
+<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>サムスン・ジャラダ小児青少年科が、ここに入力した個人情報および健康情報(お子さんの情報を含む)を、この問い合わせへの対応のために収集・利用し、韓国で処理することに同意します。同意はクリニックへの連絡でいつでも撤回できます。*</span></label><p style="margin:4px 0 0;font-size:13.5px"><a href="privacy/" target="_blank" rel="noopener">プライバシーに関するお知らせを読む</a></p></div>
 <button class="btn p" type="submit" id="sb">送信する</button>
 <div id="res" class="msg" role="status"></div>
 <h3 style="margin:22px 0 4px;font-size:15px">直接のご連絡</h3><div class="direct"><a href="tel:+8225230111">☎ +82-2-523-0111</a>
@@ -120,7 +120,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <span class="direct-id"><a data-m="whatsapp" href="#">WhatsApp: @jaradacare</a></span></div>
 </form></div></section>
 </main>
-<footer><div class="wrap"><p>このページは一般的な情報であり、医療上の助言や診断ではありません。診察や治療の結果はお子さんごとに異なり、保証できません。</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a></p></div></footer>
+<footer><div class="wrap"><p>このページは一般的な情報であり、医療上の助言や診断ではありません。診察や治療の結果はお子さんごとに異なり、保証できません。</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a> · <a href="privacy/">プライバシーに関するお知らせ</a></p></div></footer>
 <script>
 (function(){
 var C={"endpoint": "https://script.google.com/macros/s/AKfycbxqUfqf1Wk36XI_0hdOOqZIhMHzNk99bvadmJzlN5wmo34oO32knxuJfpZoPgzREwk/exec", "lang": "ja", "ok": "ありがとうございます。お問い合わせを受け付けました(受付番号:{id})。内容を確認のうえ、ご希望の連絡方法でご返信します。", "err": "送信に失敗しました。下記の電話またはメールで直接ご連絡ください。", "req": "必須項目をご入力ください。", "sending": "送信中…", "submit": "送信する"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb');

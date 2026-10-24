@@ -112,7 +112,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <div class="fld"><label>Main concern *</label><select name="concern" required><option value="short">Short stature / slow growth</option><option value="puberty">Early puberty</option><option value="obesity">Childhood obesity / metabolic</option><option value="other">Other</option></select></div>
 <div class="fld"><label>Anything else we should know</label><textarea name="message" maxlength="2000"></textarea></div>
 <div class="fld"><label>Attach files (optional)</label><input type="file" id="files" accept="image/*,application/pdf" multiple></div>
-<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>I agree that Samsung Jarada Pediatric Clinic collects and uses the personal and health information entered here, including my child&#x27;s, to respond to this inquiry, and that it is processed in Korea. I can withdraw consent at any time by contacting the clinic. *</span></label></div>
+<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>I agree that Samsung Jarada Pediatric Clinic collects and uses the personal and health information entered here, including my child&#x27;s, to respond to this inquiry, and that it is processed in Korea. I can withdraw consent at any time by contacting the clinic. *</span></label><p style="margin:4px 0 0;font-size:13.5px"><a href="privacy/" target="_blank" rel="noopener">Read the privacy notice</a></p></div>
 <button class="btn p" type="submit" id="sb">Send inquiry</button>
 <div id="res" class="msg" role="status"></div>
 <h3 style="margin:22px 0 4px;font-size:15px">Contact us directly</h3><div class="direct"><a href="tel:+8225230111">☎ +82-2-523-0111</a>
@@ -120,7 +120,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <span class="direct-id"><a data-m="whatsapp" href="#">WhatsApp: @jaradacare</a></span></div>
 </form></div></section>
 </main>
-<footer><div class="wrap"><p>This page is general information, not medical advice or a diagnosis. Results of examination and treatment differ for each child and cannot be guaranteed.</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a></p></div></footer>
+<footer><div class="wrap"><p>This page is general information, not medical advice or a diagnosis. Results of examination and treatment differ for each child and cannot be guaranteed.</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a> · <a href="privacy/">Privacy notice</a></p></div></footer>
 <script>
 (function(){
 var C={"endpoint": "https://script.google.com/macros/s/AKfycbxqUfqf1Wk36XI_0hdOOqZIhMHzNk99bvadmJzlN5wmo34oO32knxuJfpZoPgzREwk/exec", "lang": "en", "ok": "Thank you. Your inquiry was received (ID: {id}). We will reply through your chosen contact method after reviewing it.", "err": "Sorry, sending failed. Please contact us directly by phone or email below.", "req": "Please complete the required fields.", "sending": "Sending…", "submit": "Send inquiry"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb');

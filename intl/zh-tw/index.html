@@ -112,7 +112,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <div class="fld"><label>主要問題 *</label><select name="concern" required><option value="short">身材矮小/生長緩慢</option><option value="puberty">性早熟</option><option value="obesity">兒童肥胖/代謝問題</option><option value="other">其他</option></select></div>
 <div class="fld"><label>其他需要告知的情況</label><textarea name="message" maxlength="2000"></textarea></div>
 <div class="fld"><label>附件(選填)</label><input type="file" id="files" accept="image/*,application/pdf" multiple></div>
-<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>我同意三星自拉達兒童青少年醫院蒐集並使用此處填寫的個人及健康資訊(包括孩子的資訊),用於回覆本次諮詢,且資訊將在韓國處理。我可隨時聯絡醫院撤回同意。*</span></label></div>
+<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>我同意三星自拉達兒童青少年醫院蒐集並使用此處填寫的個人及健康資訊(包括孩子的資訊),用於回覆本次諮詢,且資訊將在韓國處理。我可隨時聯絡醫院撤回同意。*</span></label><p style="margin:4px 0 0;font-size:13.5px"><a href="privacy/" target="_blank" rel="noopener">閱讀隱私權聲明</a></p></div>
 <button class="btn p" type="submit" id="sb">提交諮詢</button>
 <div id="res" class="msg" role="status"></div>
 <h3 style="margin:22px 0 4px;font-size:15px">直接聯絡我們</h3><div class="direct"><a href="tel:+8225230111">☎ +82-2-523-0111</a>
@@ -120,7 +120,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <span class="direct-id"><a data-m="whatsapp" href="#">WhatsApp: @jaradacare</a></span></div>
 </form></div></section>
 </main>
-<footer><div class="wrap"><p>本頁面為一般性資訊,不構成醫療建議或診斷。檢查與治療結果因人而異,無法保證。</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a></p></div></footer>
+<footer><div class="wrap"><p>本頁面為一般性資訊,不構成醫療建議或診斷。檢查與治療結果因人而異,無法保證。</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a> · <a href="privacy/">隱私權聲明</a></p></div></footer>
 <script>
 (function(){
 var C={"endpoint": "https://script.google.com/macros/s/AKfycbxqUfqf1Wk36XI_0hdOOqZIhMHzNk99bvadmJzlN5wmo34oO32knxuJfpZoPgzREwk/exec", "lang": "zh-tw", "ok": "謝謝。已收到您的諮詢(編號:{id})。審閱後我們將透過您選擇的聯絡方式回覆。", "err": "抱歉,傳送失敗。請透過下方電話或電子郵件直接聯絡我們。", "req": "請填寫所有必填項目。", "sending": "傳送中…", "submit": "提交諮詢"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb');

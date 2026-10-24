@@ -112,7 +112,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <div class="fld"><label>主要问题 *</label><select name="concern" required><option value="short">身材矮小/生长缓慢</option><option value="puberty">性早熟</option><option value="obesity">儿童肥胖/代谢问题</option><option value="other">其他</option></select></div>
 <div class="fld"><label>其他需要告知的情况</label><textarea name="message" maxlength="2000"></textarea></div>
 <div class="fld"><label>附件(选填)</label><input type="file" id="files" accept="image/*,application/pdf" multiple></div>
-<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>我同意三星自拉达儿童青少年医院收集并使用此处填写的个人及健康信息(包括孩子的信息),用于答复本次咨询,且信息将在韩国处理。我可随时联系医院撤回同意。*</span></label></div>
+<div class="fld"><label class="chk"><input type="checkbox" name="consent" required><span>我同意三星自拉达儿童青少年医院收集并使用此处填写的个人及健康信息(包括孩子的信息),用于答复本次咨询,且信息将在韩国处理。我可随时联系医院撤回同意。*</span></label><p style="margin:4px 0 0;font-size:13.5px"><a href="privacy/" target="_blank" rel="noopener">阅读隐私声明</a></p></div>
 <button class="btn p" type="submit" id="sb">提交咨询</button>
 <div id="res" class="msg" role="status"></div>
 <h3 style="margin:22px 0 4px;font-size:15px">直接联系我们</h3><div class="direct"><a href="tel:+8225230111">☎ +82-2-523-0111</a>
@@ -120,7 +120,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <span class="direct-id"><a data-m="whatsapp" href="#">WhatsApp: @jaradacare</a></span></div>
 </form></div></section>
 </main>
-<footer><div class="wrap"><p>本页面为一般性信息,不构成医疗建议或诊断。检查与治疗结果因人而异,无法保证。</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a></p></div></footer>
+<footer><div class="wrap"><p>本页面为一般性信息,不构成医疗建议或诊断。检查与治疗结果因人而异,无法保证。</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a> · <a href="privacy/">隐私声明</a></p></div></footer>
 <script>
 (function(){
 var C={"endpoint": "https://script.google.com/macros/s/AKfycbxqUfqf1Wk36XI_0hdOOqZIhMHzNk99bvadmJzlN5wmo34oO32knxuJfpZoPgzREwk/exec", "lang": "zh", "ok": "谢谢。已收到您的咨询(编号:{id})。审阅后我们将通过您选择的联系方式回复。", "err": "抱歉,发送失败。请通过下方电话或邮箱直接联系我们。", "req": "请填写所有必填项。", "sending": "发送中…", "submit": "提交咨询"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb');
