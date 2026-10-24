@@ -123,7 +123,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <footer><div class="wrap"><p>本页面为一般性信息,不构成医疗建议或诊断。检查与治疗结果因人而异,无法保证。</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a></p></div></footer>
 <script>
 (function(){
-var C={"endpoint": "", "lang": "zh", "ok": "谢谢。已收到您的咨询(编号:{id})。审阅后我们将通过您选择的联系方式回复。", "err": "抱歉,发送失败。请通过下方电话或邮箱直接联系我们。", "req": "请填写所有必填项。", "sending": "发送中…", "submit": "提交咨询"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb');
+var C={"endpoint": "https://script.google.com/macros/s/AKfycbxqUfqf1Wk36XI_0hdOOqZIhMHzNk99bvadmJzlN5wmo34oO32knxuJfpZoPgzREwk/exec", "lang": "zh", "ok": "谢谢。已收到您的咨询(编号:{id})。审阅后我们将通过您选择的联系方式回复。", "err": "抱歉,发送失败。请通过下方电话或邮箱直接联系我们。", "req": "请填写所有必填项。", "sending": "发送中…", "submit": "提交咨询"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb');
 function ev(n,p){try{gtag('event',n,Object.assign({language:C.lang},p||{}))}catch(e){}}
 document.addEventListener('click',function(e){var a=e.target.closest('[data-ev],[data-m]');if(!a)return;ev(a.dataset.ev||'contact_click',{method:a.dataset.m||''})});
 function rd(file){return new Promise(function(ok,no){var r=new FileReader();r.onload=function(){ok({name:file.name,type:file.type,data:String(r.result).split(',')[1]})};r.onerror=no;r.readAsDataURL(file)})}

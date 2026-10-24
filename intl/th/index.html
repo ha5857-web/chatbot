@@ -123,7 +123,7 @@ footer{padding:28px 0 60px;color:var(--ink3);font-size:13.5px;border-top:1px sol
 <footer><div class="wrap"><p>หน้านี้เป็นข้อมูลทั่วไป ไม่ใช่คำแนะนำทางการแพทย์หรือการวินิจฉัย ผลการตรวจและการรักษาแตกต่างกันในเด็กแต่ละคนและไม่สามารถรับประกันได้</p><p>© Samsung Jarada Pediatric Clinic · Seocho-gu, Seoul, Korea · <a href="../">Languages</a></p></div></footer>
 <script>
 (function(){
-var C={"endpoint": "", "lang": "th", "ok": "ขอบคุณค่ะ/ครับ เราได้รับคำถามของคุณแล้ว (หมายเลข: {id}) หลังตรวจสอบ เราจะตอบกลับผ่านช่องทางที่คุณเลือก", "err": "ขออภัย ส่งไม่สำเร็จ โปรดติดต่อเราโดยตรงทางโทรศัพท์หรืออีเมลด้านล่าง", "req": "โปรดกรอกช่องที่จำเป็น", "sending": "กำลังส่ง…", "submit": "ส่งคำถาม"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb');
+var C={"endpoint": "https://script.google.com/macros/s/AKfycbxqUfqf1Wk36XI_0hdOOqZIhMHzNk99bvadmJzlN5wmo34oO32knxuJfpZoPgzREwk/exec", "lang": "th", "ok": "ขอบคุณค่ะ/ครับ เราได้รับคำถามของคุณแล้ว (หมายเลข: {id}) หลังตรวจสอบ เราจะตอบกลับผ่านช่องทางที่คุณเลือก", "err": "ขออภัย ส่งไม่สำเร็จ โปรดติดต่อเราโดยตรงทางโทรศัพท์หรืออีเมลด้านล่าง", "req": "โปรดกรอกช่องที่จำเป็น", "sending": "กำลังส่ง…", "submit": "ส่งคำถาม"},f=document.getElementById('f'),res=document.getElementById('res'),sb=document.getElementById('sb');
 function ev(n,p){try{gtag('event',n,Object.assign({language:C.lang},p||{}))}catch(e){}}
 document.addEventListener('click',function(e){var a=e.target.closest('[data-ev],[data-m]');if(!a)return;ev(a.dataset.ev||'contact_click',{method:a.dataset.m||''})});
 function rd(file){return new Promise(function(ok,no){var r=new FileReader();r.onload=function(){ok({name:file.name,type:file.type,data:String(r.result).split(',')[1]})};r.onerror=no;r.readAsDataURL(file)})}
