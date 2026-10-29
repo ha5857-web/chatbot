@@ -4694,5 +4694,544 @@ function jrdGoBack(){
   setInterval(function(){ var t = label(); if(btn.textContent !== t) btn.textContent = t; }, 1500);   // 언어를 바꾸면 버튼 글자도 따라 바뀜
 })();
 </script>
+<script>
+(function () {
+  'use strict';
+
+  /* ───── 동아 Growtropin-II PEN 용량환산표 (병원 비치 용량환산표 사진 기준) ─────
+   * 'N x 용량' = 같은 용량 N회, 'a+b' = 한 번 맞을 때 카트리지가 바뀌어 a(남은 양)+b(새 카트리지)로 나눠 맞는 회차
+   * 한 세트 = 카트리지 30단위 합계(30 또는 2개 분량 60) — 세트가 끝나면 1회차부터 다시 시작 */
+  var SPEC = {
+    '2.6': '6x2.4,6x2.6',
+    '2.8': '4x2.6,7x2.8',
+    '3':   '10x3',
+    '3.4': '3x3.2,6x3.4',
+    '3.8': '2x3.6,6x3.8',
+    '4.2': '4x4.2,3x4.4',
+    '4.6': '6x4.6,2.4+2.2,5x4.6,4.8',
+    '5':   '6x5',
+    '5.4': '5x5.4,3+2.4,2x5.4,3x5.6',
+    '6':   '5x6',
+    '6.6': '4x6.6,3.6+3,6.6,3x6.8',
+    '7.4': '2x7.2,2x7.4'
+  };
+  /* 펜(제품) 목록 — cart: 카트리지 1개 분량(단위). 새 제품은 여기에 용량환산표(spec)만 추가하면 됩니다.
+   *  예) gq: { name:'지노트로핀 고퀵 36단위', cart:36, keys:[...], spec:{ '설정용량':'6x5,...' } } */
+  /* 펜(제품) 목록 — cart: 카트리지/펜 1개 분량(단위).
+   * ① spec 방식: 병원 비치 용량환산표를 그대로 옮긴 제품(동아 그로트로핀II 펜)
+   * ② gen 방식: mg 다이얼 펜 — 펜 1개를 남김없이 쓰도록 전체 클릭 수를 N회(=총단위÷설정용량 반올림)에 고르게 나눔(앞쪽이 1클릭 적게)
+   *    gen = { mg: 1클릭당 mg, total: 총 mg, minMg/maxMg: 1회 최소·최대 mg, step: 설정용량 간격(단위) }, 1mg = 3단위 */
+  var PENS = {
+    g2: { name: '동아 그로트로핀II 펜', cart: 30, keys: ['2.6', '2.8', '3', '3.4', '3.8', '4.2', '4.6', '5', '5.4', '6', '6.6', '7.4'], spec: SPEC }
+  };
+  function addGen(id, name, g) {
+    g.unit = g.mg * 3; g.clicks = Math.round(g.total / g.mg); g.minC = Math.round(g.minMg / g.mg); g.maxC = Math.round(g.maxMg / g.mg);
+    PENS[id] = { name: name, cart: g.total * 3, gen: g, keys: [] };
+    var tot = g.clicks * g.unit;
+    for (var T = g.step; T <= tot; T += g.step) {
+      T = Math.round(T * 1000) / 1000;
+      var N = Math.round(tot / T); if (N < 3 || N > 40) continue;
+      var base = Math.floor(g.clicks / N), extra = g.clicks - base * N;
+      if (base < g.minC || base + (extra ? 1 : 0) > g.maxC) continue;
+      PENS[id].keys.push(String(T));
+    }
+  }
+  // 지노트로핀 고퀵 12mg: 0.15mg/클릭, 1회 0.3~4.5mg (화이자 매뉴얼)
+  addGen('gq', '지노트로핀 고퀵 36단위(12mg)', { mg: 0.15, total: 12, minMg: 0.3, maxMg: 4.5, step: 0.5 });
+  // 지노트로핀 고퀵 5.3mg(16단위): 0.05mg/클릭, 1회 0.1~1.5mg (화이자 매뉴얼)
+  addGen('gq53', '지노트로핀 고퀵 16단위(5.3mg)', { mg: 0.05, total: 5.3, minMg: 0.1, maxMg: 1.5, step: 0.25 });
+  // 지노트로핀주(급여) 카트리지 + 지노트로핀 펜: 5.3mg → 0.1mg/클릭·최대 2mg, 12mg → 0.2mg/클릭·최대 4mg (한국화이자 허가문서)
+  addGen('gp53', '지노트로핀주 5.3mg 카트리지(급여·지노트로핀 펜)', { mg: 0.1, total: 5.3, minMg: 0.1, maxMg: 2.0, step: 0.25 });
+  addGen('gp12', '지노트로핀주 12mg 카트리지(급여·지노트로핀 펜)', { mg: 0.2, total: 12, minMg: 0.2, maxMg: 4.0, step: 0.5 });
+  // 노디트로핀 플렉스프(지나브)펜: 5mg=0.025mg/클릭·최대2.0mg, 10mg=0.05mg/클릭·최대4.0mg, 15mg=0.1mg/클릭·최대8.0mg (유럽 허가문서)
+  addGen('nd5', '노디트로핀 지나브펜 5mg/1.5mL', { mg: 0.025, total: 5, minMg: 0.025, maxMg: 2.0, step: 0.25 });
+  addGen('nd10', '노디트로핀 지나브펜 10mg/1.5mL', { mg: 0.05, total: 10, minMg: 0.05, maxMg: 4.0, step: 0.5 });
+  addGen('nd15', '노디트로핀 지나브펜 15mg/1.5mL', { mg: 0.1, total: 15, minMg: 0.1, maxMg: 8.0, step: 0.5 });
+  // 싸이젠 전자식 펜(easypod 3.0): 0.05mg 단위 (6·12·20mg 카트리지)
+  addGen('sz6', '싸이젠 6mg 카트리지(전자식 펜)', { mg: 0.05, total: 6, minMg: 0.05, maxMg: 6, step: 0.25 });
+  addGen('sz12', '싸이젠 12mg 카트리지(전자식 펜)', { mg: 0.05, total: 12, minMg: 0.05, maxMg: 12, step: 0.5 });
+  addGen('sz20', '싸이젠 20mg 카트리지(전자식 펜)', { mg: 0.05, total: 20, minMg: 0.05, maxMg: 20, step: 1 });
+
+  // 조맥톤주 10mg(바이알 10mg/mL, 재조제 후 28일 이내 사용): 주사기로 뽑는 방식이라 매회 같은 용량. 한 바이알 = floor(10÷용량)회, 28일 한도(6일 맞고 1일 쉬면 24회)
+  PENS.zm10 = { name: '조맥톤주 10mg (바이알·주사기)', cart: 30, vial: { total: 10, conc: 10, maxInj: 24, step: 0.1, minMg: 0.2 }, keys: [] };
+  (function () {
+    var v = PENS.zm10.vial;
+    for (var D = v.minMg; D <= v.total / 3 + 1e-9; D += v.step) { D = Math.round(D * 100) / 100; PENS.zm10.keys.push(String(D)); }
+  })();
+
+  function parseSpec(str) {
+    var out = [];
+    str.split(',').forEach(function (tok) {
+      var m = /^(?:(\d+)x)?([\d.]+(?:\+[\d.]+)?)$/.exec(tok.trim());
+      if (!m) return;
+      var n = m[1] ? +m[1] : 1;
+      var segs = m[2].split('+').map(parseFloat);
+      for (var i = 0; i < n; i++) out.push(segs.slice());
+    });
+    return out;
+  }
+  var TABLES = {};
+  var META = {};   // mg 다이얼 제품: META[pen][dose] = [{ c: 클릭수, mg: mg }, ...]
+  Object.keys(PENS).forEach(function (id) {
+    var p = PENS[id]; TABLES[id] = {};
+    if (p.vial) {
+      var v = p.vial; META[id] = {};
+      p.keys.forEach(function (k) {
+        var D = parseFloat(k), N = Math.min(Math.floor(v.total / D + 1e-9), v.maxInj), arr = [], meta = [];
+        for (var i = 0; i < N; i++) { arr.push([Math.round(D * 3 * 1000) / 1000]); meta.push({ c: null, mg: D, ml: Math.round(D / v.conc * 1000) / 1000 }); }
+        TABLES[id][k] = arr; META[id][k] = meta;
+      });
+      return;
+    }
+    if (!p.gen) { p.keys.forEach(function (k) { TABLES[id][k] = parseSpec(p.spec[k]); }); return; }
+    var g = p.gen; META[id] = {};
+    p.keys.forEach(function (k) {
+      var T = parseFloat(k), N = Math.round((g.clicks * g.unit) / T), base = Math.floor(g.clicks / N), extra = g.clicks - base * N, arr = [], meta = [];
+      for (var i = 0; i < N; i++) { var c = base + (i >= N - extra ? 1 : 0); arr.push([Math.round(c * g.unit * 1000) / 1000]); meta.push({ c: c, mg: Math.round(c * g.mg * 1000) / 1000 }); }
+      TABLES[id][k] = arr; META[id][k] = meta;
+    });
+  });
+  function penOf(id) { return PENS[id] || PENS.g2; }
+  function tableOf(pen, dose) { return (TABLES[PENS[pen] ? pen : 'g2'] || {})[dose]; }
+  function r1(x) { return Math.round(x * 1000) / 1000; }
+  function sum(a) { return a.reduce(function (s, v) { return s + v; }, 0); }
+
+  /* ───── 다국어 ───── */
+  var TX = {
+    ko: { dial: '펜 다이얼: {mg}mg ({c}클릭)', newpen: '새 펜 시작', draw: '주사기로 {ml}mL 준비 ({mg}mg)', newvial: '새 바이알(재조제) 시작', title: '💉 성장호르몬 주사 스케줄', sub: '동아 그로트로핀II 펜 · 6일 맞고 1일 쉬기', f_pen: '주사 제품', f_dose: '세팅 용량', f_start: '첫 투여일', f_k: '첫 투여 회차', f_visit: '다음 외래일', f_run: '연속 투여 일수', make: '스케줄 만들기', del: '스케줄 삭제', delq: '이 아이의 주사 스케줄을 삭제할까요?', today_inj: '오늘 {k}/{n}번째 · {dose}단위', today_rest: '오늘은 쉬는 날이에요', today_out: '오늘은 스케줄 범위 밖이에요', skip_today: '오늘 못 맞았어요 → 내일로 미루기', skip: '이날 못 맞았어요 (다음날로 미루기)', undo: '되돌리기 (이날 맞은 걸로)', c_rest: '휴약', c_skip: '건너뜀', c_visit: '외래', day_inj: '{set}번째 세트 · {k}/{n}번째 · {dose}단위', split: '카트리지 교체: 남은 {a}단위를 맞고 새 카트리지에서 {b}단위 이어서', newcart: '새 카트리지 시작', upcoming: '앞으로 7일', unit: '단위', note: '동아 Growtropin-II PEN 용량환산표 기준입니다. 용량과 외래일은 담당 의사의 안내를 따라 주세요.', hint_set: '이 용량은 한 세트가 {n}회 ({t}단위)예요', moved: '내일 {k}/{n}번째 · {dose}단위로 미뤄졌어요', visit_day: '다음 외래일', rest_day: '쉬는 날 (6일 맞고 1일 쉬기)', skipped_day: '못 맞은 날 — 이 회차는 다음날로 밀렸어요', need: '세팅 용량과 첫 투여일을 입력해 주세요', edit: '설정 바꾸기', open: '열기' },
+    en: { dial: 'Pen dial: {mg} mg ({c} clicks)', newpen: 'Start a new pen', draw: 'Draw {ml} mL ({mg} mg)', newvial: 'Start a new vial (reconstitute)', title: '💉 Growth hormone injection schedule', sub: 'Dong-A Growtropin-II PEN · 6 days on, 1 day off', f_pen: 'Product', f_dose: 'Dose setting', f_start: 'First injection date', f_k: 'First injection no.', f_visit: 'Next clinic visit', f_run: 'Days in a row', make: 'Create schedule', del: 'Delete schedule', delq: "Delete this child's injection schedule?", today_inj: 'Today: #{k} of {n} · {dose} units', today_rest: 'Today is a rest day', today_out: 'Today is outside the schedule', skip_today: "Missed today → move to tomorrow", skip: 'Missed this day (push to next day)', undo: 'Undo (mark as given)', c_rest: 'Rest', c_skip: 'Missed', c_visit: 'Visit', day_inj: 'Set {set} · #{k} of {n} · {dose} units', split: 'Cartridge change: inject the remaining {a} units, then {b} units from the new cartridge', newcart: 'Start a new cartridge', upcoming: 'Next 7 days', unit: 'units', note: "Based on the Dong-A Growtropin-II PEN dose conversion chart. Follow your doctor's instructions for dose and visit date.", hint_set: 'One set of this dose is {n} injections ({t} units)', moved: 'Moved to tomorrow: #{k} of {n} · {dose} units', visit_day: 'Next clinic visit', rest_day: 'Rest day (6 on, 1 off)', skipped_day: 'Missed — this injection moved to the next day', need: 'Enter the dose setting and first injection date', edit: 'Change settings', open: 'Open' },
+    zh: { dial: '笔刻度：{mg}mg（{c}格）', newpen: '开始使用新笔', draw: '用注射器抽取{ml}mL（{mg}mg）', newvial: '开始使用新药瓶（重新配制）', title: '💉 生长激素注射日程', sub: '东亚 Growtropin-II 笔 · 打6天休1天', f_pen: '产品', f_dose: '设定剂量', f_start: '首次注射日', f_k: '首次注射序号', f_visit: '下次门诊日', f_run: '连续注射天数', make: '生成日程', del: '删除日程', delq: '要删除这个孩子的注射日程吗？', today_inj: '今天第{k}/{n}次 · {dose}单位', today_rest: '今天是休息日', today_out: '今天不在日程范围内', skip_today: '今天没打 → 顺延到明天', skip: '这天没打（顺延到次日）', undo: '撤销（视为已打）', c_rest: '休息', c_skip: '漏打', c_visit: '门诊', day_inj: '第{set}组 · 第{k}/{n}次 · {dose}单位', split: '更换笔芯：先打完剩余{a}单位，再从新笔芯接着打{b}单位', newcart: '开始使用新笔芯', upcoming: '未来7天', unit: '单位', note: '依据东亚 Growtropin-II PEN 剂量换算表。剂量和门诊日请遵医嘱。', hint_set: '此剂量一组为{n}次（{t}单位）', moved: '已顺延到明天：第{k}/{n}次 · {dose}单位', visit_day: '下次门诊日', rest_day: '休息日（打6天休1天）', skipped_day: '漏打 — 本次顺延到次日', need: '请输入设定剂量和首次注射日', edit: '修改设置', open: '展开' },
+    'zh-TW': { dial: '筆刻度：{mg}mg（{c}格）', newpen: '開始使用新筆', draw: '用注射器抽取{ml}mL（{mg}mg）', newvial: '開始使用新藥瓶（重新調配）', title: '💉 生長激素注射行程', sub: '東亞 Growtropin-II 筆 · 打6天休1天', f_pen: '產品', f_dose: '設定劑量', f_start: '首次注射日', f_k: '首次注射序號', f_visit: '下次門診日', f_run: '連續注射天數', make: '建立行程', del: '刪除行程', delq: '要刪除這個孩子的注射行程嗎？', today_inj: '今天第{k}/{n}次 · {dose}單位', today_rest: '今天是休息日', today_out: '今天不在行程範圍內', skip_today: '今天沒打 → 順延到明天', skip: '這天沒打（順延到隔天）', undo: '復原（視為已打）', c_rest: '休息', c_skip: '漏打', c_visit: '門診', day_inj: '第{set}組 · 第{k}/{n}次 · {dose}單位', split: '更換藥匣：先打完剩餘{a}單位，再從新藥匣接著打{b}單位', newcart: '開始使用新藥匣', upcoming: '未來7天', unit: '單位', note: '依據東亞 Growtropin-II PEN 劑量換算表。劑量與門診日請依醫師指示。', hint_set: '此劑量一組為{n}次（{t}單位）', moved: '已順延到明天：第{k}/{n}次 · {dose}單位', visit_day: '下次門診日', rest_day: '休息日（打6天休1天）', skipped_day: '漏打 — 本次順延到隔天', need: '請輸入設定劑量與首次注射日', edit: '修改設定', open: '展開' },
+    ja: { dial: 'ペンのダイヤル：{mg}mg（{c}クリック）', newpen: '新しいペンを開始', draw: 'シリンジで{ml}mLを準備（{mg}mg）', newvial: '新しいバイアル開始（再溶解）', title: '💉 成長ホルモン注射スケジュール', sub: '東亜 Growtropin-II ペン · 6日打って1日休み', f_pen: '製品', f_dose: '設定用量', f_start: '初回投与日', f_k: '初回の回数', f_visit: '次回の外来日', f_run: '連続投与日数', make: 'スケジュール作成', del: 'スケジュール削除', delq: 'このお子さんの注射スケジュールを削除しますか？', today_inj: '今日は{k}/{n}回目 · {dose}単位', today_rest: '今日は休みの日です', today_out: '今日はスケジュール範囲外です', skip_today: '今日は打てなかった → 明日へ延期', skip: 'この日は打てなかった（翌日へ延期）', undo: '元に戻す（打ったことにする）', c_rest: '休薬', c_skip: '未投与', c_visit: '外来', day_inj: '第{set}セット · {k}/{n}回目 · {dose}単位', split: 'カートリッジ交換：残り{a}単位を打ち、新しいカートリッジから{b}単位を続けて', newcart: '新しいカートリッジ開始', upcoming: '今後7日間', unit: '単位', note: '東亜 Growtropin-II PEN の用量換算表に基づきます。用量と外来日は主治医の指示に従ってください。', hint_set: 'この用量は1セット{n}回（{t}単位）です', moved: '明日に延期：{k}/{n}回目 · {dose}単位', visit_day: '次回の外来日', rest_day: '休みの日（6日打って1日休み）', skipped_day: '未投与 — この回は翌日に繰り越されました', need: '設定用量と初回投与日を入力してください', edit: '設定を変更', open: '開く' },
+    vi: { dial: 'Vòng chỉnh liều: {mg} mg ({c} nấc)', newpen: 'Bắt đầu bút mới', draw: 'Rút {ml} mL bằng bơm tiêm ({mg} mg)', newvial: 'Bắt đầu lọ mới (pha lại)', title: '💉 Lịch tiêm hormone tăng trưởng', sub: 'Bút Dong-A Growtropin-II · tiêm 6 ngày nghỉ 1 ngày', f_pen: 'Sản phẩm', f_dose: 'Liều cài đặt', f_start: 'Ngày tiêm đầu tiên', f_k: 'Mũi tiêm đầu tiên số', f_visit: 'Ngày tái khám', f_run: 'Số ngày tiêm liên tiếp', make: 'Tạo lịch', del: 'Xóa lịch', delq: 'Xóa lịch tiêm của bé này?', today_inj: 'Hôm nay: mũi {k}/{n} · {dose} đơn vị', today_rest: 'Hôm nay là ngày nghỉ', today_out: 'Hôm nay nằm ngoài lịch', skip_today: 'Hôm nay chưa tiêm → dời sang ngày mai', skip: 'Ngày này chưa tiêm (dời sang ngày sau)', undo: 'Hoàn tác (coi như đã tiêm)', c_rest: 'Nghỉ', c_skip: 'Bỏ lỡ', c_visit: 'Khám', day_inj: 'Bộ {set} · mũi {k}/{n} · {dose} đơn vị', split: 'Đổi ống thuốc: tiêm nốt {a} đơn vị còn lại, rồi {b} đơn vị từ ống mới', newcart: 'Bắt đầu ống thuốc mới', upcoming: '7 ngày tới', unit: 'đơn vị', note: 'Theo bảng quy đổi liều bút Dong-A Growtropin-II. Hãy làm theo hướng dẫn của bác sĩ về liều và ngày tái khám.', hint_set: 'Một bộ với liều này gồm {n} mũi ({t} đơn vị)', moved: 'Đã dời sang ngày mai: mũi {k}/{n} · {dose} đơn vị', visit_day: 'Ngày tái khám', rest_day: 'Ngày nghỉ (tiêm 6 nghỉ 1)', skipped_day: 'Bỏ lỡ — mũi này dời sang ngày sau', need: 'Hãy nhập liều cài đặt và ngày tiêm đầu tiên', edit: 'Đổi cài đặt', open: 'Mở' },
+    th: { dial: 'หมุนปากกา: {mg} มก. ({c} คลิก)', newpen: 'เริ่มปากกาด้ามใหม่', draw: 'ดูดยา {ml} มล. ด้วยกระบอกฉีด ({mg} มก.)', newvial: 'เริ่มขวดใหม่ (ผสมใหม่)', title: '💉 ตารางฉีดโกรทฮอร์โมน', sub: 'ปากกา Dong-A Growtropin-II · ฉีด 6 วัน พัก 1 วัน', f_pen: 'ผลิตภัณฑ์', f_dose: 'ขนาดที่ตั้ง', f_start: 'วันฉีดครั้งแรก', f_k: 'ครั้งที่เริ่มต้น', f_visit: 'วันนัดพบแพทย์ครั้งหน้า', f_run: 'จำนวนวันฉีดต่อเนื่อง', make: 'สร้างตาราง', del: 'ลบตาราง', delq: 'ลบตารางฉีดของเด็กคนนี้หรือไม่', today_inj: 'วันนี้ครั้งที่ {k}/{n} · {dose} หน่วย', today_rest: 'วันนี้เป็นวันพัก', today_out: 'วันนี้อยู่นอกช่วงตาราง', skip_today: 'วันนี้ไม่ได้ฉีด → เลื่อนเป็นพรุ่งนี้', skip: 'วันนี้ไม่ได้ฉีด (เลื่อนไปวันถัดไป)', undo: 'ยกเลิก (นับว่าฉีดแล้ว)', c_rest: 'พัก', c_skip: 'พลาด', c_visit: 'นัดพบ', day_inj: 'ชุดที่ {set} · ครั้งที่ {k}/{n} · {dose} หน่วย', split: 'เปลี่ยนคาร์ทริดจ์: ฉีดส่วนที่เหลือ {a} หน่วย แล้วต่อด้วย {b} หน่วยจากคาร์ทริดจ์ใหม่', newcart: 'เริ่มคาร์ทริดจ์ใหม่', upcoming: '7 วันข้างหน้า', unit: 'หน่วย', note: 'อ้างอิงตารางแปลงขนาดยาปากกา Dong-A Growtropin-II โปรดทำตามคำแนะนำของแพทย์เรื่องขนาดยาและวันนัด', hint_set: 'ขนาดนี้ 1 ชุดมี {n} ครั้ง ({t} หน่วย)', moved: 'เลื่อนเป็นพรุ่งนี้: ครั้งที่ {k}/{n} · {dose} หน่วย', visit_day: 'วันนัดพบแพทย์', rest_day: 'วันพัก (ฉีด 6 พัก 1)', skipped_day: 'พลาด — ครั้งนี้เลื่อนไปวันถัดไป', need: 'กรุณากรอกขนาดที่ตั้งและวันฉีดครั้งแรก', edit: 'แก้ไขการตั้งค่า', open: 'เปิด' },
+    id: { dial: 'Putar pena: {mg} mg ({c} klik)', newpen: 'Mulai pena baru', draw: 'Ambil {ml} mL dengan spuit ({mg} mg)', newvial: 'Mulai vial baru (rekonstitusi)', title: '💉 Jadwal suntik hormon pertumbuhan', sub: 'Pena Dong-A Growtropin-II · suntik 6 hari, libur 1 hari', f_pen: 'Produk', f_dose: 'Dosis pengaturan', f_start: 'Tanggal suntik pertama', f_k: 'Suntikan pertama ke-', f_visit: 'Kunjungan berikutnya', f_run: 'Hari berturut-turut', make: 'Buat jadwal', del: 'Hapus jadwal', delq: 'Hapus jadwal suntik anak ini?', today_inj: 'Hari ini ke-{k}/{n} · {dose} unit', today_rest: 'Hari ini hari libur suntik', today_out: 'Hari ini di luar jadwal', skip_today: 'Hari ini terlewat → geser ke besok', skip: 'Hari ini terlewat (geser ke hari berikutnya)', undo: 'Batalkan (anggap sudah disuntik)', c_rest: 'Libur', c_skip: 'Terlewat', c_visit: 'Kontrol', day_inj: 'Set {set} · ke-{k}/{n} · {dose} unit', split: 'Ganti kartrid: suntikkan sisa {a} unit, lalu {b} unit dari kartrid baru', newcart: 'Mulai kartrid baru', upcoming: '7 hari ke depan', unit: 'unit', note: 'Berdasarkan tabel konversi dosis pena Dong-A Growtropin-II. Ikuti arahan dokter untuk dosis dan tanggal kontrol.', hint_set: 'Satu set dosis ini = {n} suntikan ({t} unit)', moved: 'Digeser ke besok: ke-{k}/{n} · {dose} unit', visit_day: 'Kunjungan berikutnya', rest_day: 'Hari libur (6 hari suntik, 1 libur)', skipped_day: 'Terlewat — suntikan ini digeser ke hari berikutnya', need: 'Isi dosis pengaturan dan tanggal suntik pertama', edit: 'Ubah pengaturan', open: 'Buka' },
+    es: { dial: 'Dial de la pluma: {mg} mg ({c} clics)', newpen: 'Empezar pluma nueva', draw: 'Cargue {ml} mL con la jeringa ({mg} mg)', newvial: 'Empezar vial nuevo (reconstituir)', title: '💉 Calendario de inyecciones de hormona de crecimiento', sub: 'Pluma Dong-A Growtropin-II · 6 días sí, 1 día descanso', f_pen: 'Producto', f_dose: 'Dosis configurada', f_start: 'Fecha de la primera inyección', f_k: 'N.º de la primera inyección', f_visit: 'Próxima consulta', f_run: 'Días seguidos', make: 'Crear calendario', del: 'Eliminar calendario', delq: '¿Eliminar el calendario de inyecciones de este niño?', today_inj: 'Hoy: n.º {k} de {n} · {dose} unidades', today_rest: 'Hoy es día de descanso', today_out: 'Hoy está fuera del calendario', skip_today: 'Hoy no se puso → pasar a mañana', skip: 'Este día no se puso (pasar al día siguiente)', undo: 'Deshacer (marcar como puesta)', c_rest: 'Descanso', c_skip: 'Omitida', c_visit: 'Consulta', day_inj: 'Serie {set} · n.º {k} de {n} · {dose} unidades', split: 'Cambio de cartucho: ponga las {a} unidades restantes y luego {b} del cartucho nuevo', newcart: 'Empezar cartucho nuevo', upcoming: 'Próximos 7 días', unit: 'unidades', note: 'Según la tabla de conversión de dosis de la pluma Dong-A Growtropin-II. Siga las indicaciones del médico sobre dosis y fecha de consulta.', hint_set: 'Una serie de esta dosis son {n} inyecciones ({t} unidades)', moved: 'Pasada a mañana: n.º {k} de {n} · {dose} unidades', visit_day: 'Próxima consulta', rest_day: 'Día de descanso (6 sí, 1 no)', skipped_day: 'Omitida — esta inyección pasó al día siguiente', need: 'Indique la dosis y la fecha de la primera inyección', edit: 'Cambiar ajustes', open: 'Abrir' },
+    ar: { dial: 'ضبط القلم: {mg} ملغ ({c} نقرة)', newpen: 'بدء قلم جديد', draw: 'اسحب {ml} مل بالمحقنة ({mg} ملغ)', newvial: 'بدء قارورة جديدة (إعادة التحضير)', title: '💉 جدول حقن هرمون النمو', sub: 'قلم Dong-A Growtropin-II · 6 أيام حقن ويوم راحة', f_pen: 'المنتج', f_dose: 'الجرعة المضبوطة', f_start: 'تاريخ أول حقنة', f_k: 'رقم أول حقنة', f_visit: 'موعد المراجعة القادمة', f_run: 'عدد الأيام المتتالية', make: 'إنشاء الجدول', del: 'حذف الجدول', delq: 'هل تريد حذف جدول حقن هذا الطفل؟', today_inj: 'اليوم: الحقنة {k}/{n} · {dose} وحدة', today_rest: 'اليوم يوم راحة', today_out: 'اليوم خارج نطاق الجدول', skip_today: 'لم تُعطَ اليوم ← تأجيل إلى الغد', skip: 'لم تُعطَ في هذا اليوم (تأجيل لليوم التالي)', undo: 'تراجع (اعتبارها أُعطيت)', c_rest: 'راحة', c_skip: 'فائتة', c_visit: 'مراجعة', day_inj: 'المجموعة {set} · الحقنة {k}/{n} · {dose} وحدة', split: 'تغيير الخرطوشة: أعطِ الـ{a} وحدة المتبقية ثم {b} وحدة من الخرطوشة الجديدة', newcart: 'بدء خرطوشة جديدة', upcoming: 'الأيام السبعة القادمة', unit: 'وحدة', note: 'بحسب جدول تحويل جرعات قلم Dong-A Growtropin-II. اتبع تعليمات الطبيب بشأن الجرعة وموعد المراجعة.', hint_set: 'المجموعة الواحدة بهذه الجرعة {n} حقنة ({t} وحدة)', moved: 'تم التأجيل إلى الغد: الحقنة {k}/{n} · {dose} وحدة', visit_day: 'موعد المراجعة القادمة', rest_day: 'يوم راحة (6 أيام حقن ويوم راحة)', skipped_day: 'فائتة — انتقلت هذه الحقنة لليوم التالي', need: 'أدخل الجرعة المضبوطة وتاريخ أول حقنة', edit: 'تغيير الإعدادات', open: 'فتح' },
+    mn: { dial: 'Үзгийн тохиргоо: {mg} мг ({c} товшилт)', newpen: 'Шинэ үзэг эхлүүлэх', draw: 'Тариураар {ml} мл татах ({mg} мг)', newvial: 'Шинэ сав эхлүүлэх (дахин уусгах)', title: '💉 Өсөлтийн даавар тарих хуваарь', sub: 'Dong-A Growtropin-II үзэг · 6 өдөр тариад 1 өдөр амрах', f_pen: 'Бүтээгдэхүүн', f_dose: 'Тохируулсан тун', f_start: 'Эхний тарих өдөр', f_k: 'Эхний тарилгын дугаар', f_visit: 'Дараагийн үзлэгийн өдөр', f_run: 'Дараалан тарих өдөр', make: 'Хуваарь үүсгэх', del: 'Хуваарь устгах', delq: 'Энэ хүүхдийн тарилгын хуваарийг устгах уу?', today_inj: 'Өнөөдөр {k}/{n}-р тарилга · {dose} нэгж', today_rest: 'Өнөөдөр амрах өдөр', today_out: 'Өнөөдөр хуваарийн гадна байна', skip_today: 'Өнөөдөр тарьж чадсангүй → маргааш руу шилжүүлэх', skip: 'Энэ өдөр тарьж чадсангүй (дараагийн өдөр рүү шилжүүлэх)', undo: 'Буцаах (тарьсан гэж тооцох)', c_rest: 'Амрах', c_skip: 'Алгассан', c_visit: 'Үзлэг', day_inj: '{set}-р багц · {k}/{n}-р тарилга · {dose} нэгж', split: 'Картриж солих: үлдсэн {a} нэгжийг тариад, шинэ картрижаас {b} нэгжийг үргэлжлүүлнэ', newcart: 'Шинэ картриж эхлүүлэх', upcoming: 'Дараагийн 7 хоног', unit: 'нэгж', note: 'Dong-A Growtropin-II үзгийн тун хөрвүүлэх хүснэгтэд үндэслэв. Тун болон үзлэгийн өдрийг эмчийнхээ зааврын дагуу авна уу.', hint_set: 'Энэ туны нэг багц {n} тарилга ({t} нэгж)', moved: 'Маргааш руу шилжлээ: {k}/{n}-р тарилга · {dose} нэгж', visit_day: 'Дараагийн үзлэгийн өдөр', rest_day: 'Амрах өдөр (6 өдөр тариад 1 амрах)', skipped_day: 'Алгассан — энэ тарилга дараагийн өдөр рүү шилжлээ', need: 'Тохируулсан тун, эхний тарих өдрөө оруулна уу', edit: 'Тохиргоо өөрчлөх', open: 'Нээх' }
+  };
+  function lang() {
+    var l = (window.JRD_LANG || document.documentElement.getAttribute('lang') || 'ko');
+    if (/^zh-?(tw|hant|hk)$/i.test(l) || l === 'zt') return 'zh-TW';
+    l = String(l).split('-')[0].toLowerCase() === 'zh' ? 'zh' : String(l).toLowerCase();
+    return TX[l] ? l : (l === 'ko' ? 'ko' : 'en');
+  }
+  function t(key, v) {
+    var s = (TX[lang()] || TX.ko)[key];
+    if (s == null) s = TX.ko[key] || key;
+    if (v) Object.keys(v).forEach(function (k) { s = s.split('{' + k + '}').join(v[k]); });
+    return s;
+  }
+
+  /* ───── 날짜 도우미 ───── */
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parse(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function addDays(s, n) { var d = parse(s); d.setDate(d.getDate() + n); return fmt(d); }
+  function todayStr() { return fmt(new Date()); }
+
+  /* ───── 저장 (아이별) ───── */
+  function childId() { try { return (typeof activeChildId !== 'undefined') ? activeChildId : 1; } catch (e) { return 1; } }
+  function key() { return 'jrdGhPlan_' + childId(); }
+  function load() { try { var v = JSON.parse(localStorage.getItem(key()) || 'null'); return v && v.start && tableOf(v.pen, v.dose) ? v : null; } catch (e) { return null; } }
+  function save(p) { try { if (p) localStorage.setItem(key(), JSON.stringify(p)); else localStorage.removeItem(key()); } catch (e) {} }
+
+  /* ───── 스케줄 계산: 못 맞은 날(skips)을 만나면 그날은 쉬고, 회차는 다음날로 그대로 이어짐 ───── */
+  function build(plan) {
+    var map = {}, seq = tableOf(plan.pen, plan.dose), cartSz = penOf(plan.pen).cart, N = seq.length, tot = r1(sum(seq.map(sum)));
+    var k = Math.min(Math.max(+plan.k0 || 1, 1), N), setNo = 1, streak = 0;
+    var run = Math.max(1, +plan.run || 6);
+    var end = plan.visit && plan.visit >= plan.start ? plan.visit : addDays(plan.start, 27);
+    var d = plan.start, guard = 0;
+    while (d <= end && guard++ < 800) {
+      if (plan.skips && plan.skips[d]) { map[d] = { t: 'skip' }; streak = 0; }
+      else if (streak >= run) { map[d] = { t: 'rest' }; streak = 0; }
+      else {
+        var segs = seq[k - 1], before = sum(seq.slice(0, k - 1).map(sum));
+        var mt = (META[plan.pen] || {})[plan.dose]; map[d] = { t: 'inj', mg: mt ? mt[k - 1].mg : null, clicks: mt ? mt[k - 1].c : null, ml: mt ? (mt[k - 1].ml != null ? mt[k - 1].ml : null) : null, k: k, n: N, set: setNo, segs: segs, dose: r1(sum(segs)), split: segs.length > 1, cart: Math.floor(before / cartSz + 1e-9) + 1, newCart: k === 1 };
+        streak++; k++;
+        if (k > N) { k = 1; setNo++; }
+      }
+      d = addDays(d, 1);
+    }
+    if (plan.visit) { if (map[plan.visit]) map[plan.visit].visit = true; else map[plan.visit] = { t: 'visit', visit: true }; }
+    return { map: map, N: N, tot: tot, end: end };
+  }
+
+  /* ───── 화면: 달력 칸 표시 ───── */
+  function chipFor(info, date) {
+    var past = date < todayStr();
+    if (info.t === 'inj') {
+      var d = info.mg != null ? info.mg + 'mg' : (info.split ? info.segs.join('+') : info.dose);
+      return '<div class="gh-chip gh-inj' + (past ? ' gh-past' : '') + (date === todayStr() ? ' gh-today' : '') + '" title="' + esc(dayText(info)) + '">💉' + info.k + '/' + info.n + '<br><b>' + d + '</b></div>';
+    }
+    if (info.t === 'rest') return '<div class="gh-chip gh-rest">' + esc(t('c_rest')) + '</div>';
+    if (info.t === 'skip') return '<div class="gh-chip gh-skip">' + esc(t('c_skip')) + '</div>';
+    return '';
+  }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function dayText(info) {
+    if (info.t !== 'inj') return '';
+    var s = t('day_inj', { set: info.set, k: info.k, n: info.n, dose: info.dose });
+    if (info.split) s += ' / ' + t('split', { a: info.segs[0], b: info.segs[1] });
+    else if (info.newCart) s += ' / ' + t(info.ml != null ? 'newvial' : (info.mg != null ? 'newpen' : 'newcart'));
+    if (info.mg != null) s += ' / ' + (info.ml != null ? t('draw', { ml: info.ml, mg: info.mg }) : t('dial', { mg: info.mg, c: info.clicks }));
+    return s;
+  }
+
+  function decorate() {
+    var plan = load(); var b = plan ? build(plan) : null;
+    document.querySelectorAll('.day-cell').forEach(function (c) {
+      c.querySelectorAll('.gh-chip').forEach(function (x) { x.remove(); });
+      c.classList.remove('gh-has');
+      var on = c.getAttribute('onclick') || ''; var m = /openRecord\('(\d{4}-\d{2}-\d{2})'/.exec(on);
+      if (!m || !b) return;
+      var info = b.map[m[1]]; if (!info) return;
+      var html = chipFor(info, m[1]);
+      if (info.visit) html += '<div class="gh-chip gh-visit">🏥' + esc(t('c_visit')) + '</div>';
+      if (html) { c.insertAdjacentHTML('beforeend', html); c.classList.add('gh-has'); }
+    });
+  }
+
+  /* ───── 화면: 상단 패널 ───── */
+  function css() {
+    if (document.getElementById('ghCss')) return;
+    var s = document.createElement('style'); s.id = 'ghCss';
+    s.textContent = [
+      '.gh-panel{max-width:680px;margin:10px auto;background:#fff;border:1.5px solid #C0902C;border-radius:12px;padding:12px 14px;color:#1B3A4B;font-size:13px;-webkit-user-select:text;user-select:text}',
+      '.gh-panel input,.gh-panel select{-webkit-user-select:text;user-select:text}',
+      '.gh-panel h3{font-size:15px;margin:0 0 2px}.gh-panel .gh-sub{font-size:11px;color:#43555F;margin-bottom:8px}',
+      '.gh-today-box{background:#FBF8F1;border:1px solid #DED5C6;border-radius:10px;padding:9px 11px;margin:8px 0;font-weight:700;font-size:14px}',
+      '.gh-row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.gh-row label{flex:1;min-width:120px;font-size:11px;font-weight:700;color:#43555F;display:block}',
+      '.gh-row select,.gh-row input{width:100%;margin-top:3px;padding:8px;border:1px solid #DED5C6;border-radius:8px;font-size:14px;background:#fff;color:#1B3A4B;font-family:inherit}',
+      '.gh-btn{border:0;border-radius:8px;padding:9px 12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}',
+      '.gh-btn.p{background:#1B3A4B;color:#fff}.gh-btn.o{background:#fff;color:#1B3A4B;border:1px solid #DED5C6}.gh-btn.w{background:#B24E36;color:#fff}',
+      '.gh-up{display:flex;gap:5px;overflow-x:auto;padding:4px 0}',
+      '.gh-up div{flex:0 0 auto;min-width:54px;text-align:center;border:1px solid #DED5C6;border-radius:8px;padding:4px 5px;font-size:11px;background:#fff}',
+      '.gh-up div b{display:block;font-size:12px}.gh-up .r{background:#f3f3f3;color:#888}.gh-up .s{background:#fbe9e5;color:#B24E36}.gh-up .t{border-color:#2E8B57;background:#eaf6ef}',
+      '.gh-hint{font-size:11px;color:#43555F;margin:4px 0}.gh-msg{font-size:12px;font-weight:700;color:#2E8B57;margin-top:6px}.gh-msg.bad{color:#B24E36}',
+      '.gh-note{font-size:10.5px;color:#7a8a93;margin-top:8px;line-height:1.5}',
+      '.day-cell .gh-chip{font-size:8px;line-height:1.15;font-weight:700;border-radius:6px;padding:1px 4px;max-width:98%;text-align:center;letter-spacing:-.02em;word-break:keep-all}',
+      '.day-cell .gh-inj{background:rgba(192,144,44,.2);color:#8a5f0f}.day-cell .gh-inj b{font-size:9px}',
+      '.day-cell .gh-inj.gh-past{opacity:.55}.day-cell .gh-inj.gh-today{background:#C0902C;color:#fff}',
+      '.day-cell .gh-rest{background:#eee;color:#888}.day-cell .gh-skip{background:#fbe9e5;color:#B24E36}.day-cell .gh-visit{background:#eaf6ef;color:#2E8B57}',
+      '.gh-daybox{margin:0 0 12px;padding:10px 12px;border:1px solid #C0902C;border-radius:10px;background:#FBF8F1;font-size:13px;color:#1B3A4B}',
+      '.gh-daybox .gh-btn{margin-top:8px;width:100%}'
+    ].join('');
+    document.head.appendChild(s);
+  }
+
+  var msg = '', formPen = null;
+  function panel() {
+    var host = document.getElementById('ghPanel');
+    if (!host) {
+      host = document.createElement('div'); host.id = 'ghPanel'; host.className = 'gh-panel';
+      var anchor = document.querySelector('.container');   // 달력 맨 뒤(월별 달력 아래)에 배치
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(host, anchor.nextSibling); else document.body.appendChild(host);
+    }
+    var plan = load(), b = plan ? build(plan) : null, today = todayStr();
+    var penId = formPen || (plan && plan.pen) || 'g2', pen = penOf(penId);
+    var subTxt = penId === 'g2' ? t('sub') : pen.name + ' · ' + t('sub').split(' · ').slice(1).join(' · ');
+    var h = '<h3>' + esc(t('title')) + '</h3><div class="gh-sub">' + esc(subTxt) + '</div>';
+    if (plan) {
+      var ti = b.map[today], line;
+      if (ti && ti.t === 'inj') line = '💉 ' + t('today_inj', { k: ti.k, n: ti.n, dose: ti.split ? ti.segs.join('+') + '=' + ti.dose : ti.dose }) + (ti.split ? '<div style="font-size:11px;font-weight:600;color:#B24E36;margin-top:3px">' + esc(t('split', { a: ti.segs[0], b: ti.segs[1] })) + '</div>' : (ti.newCart ? '<div style="font-size:11px;font-weight:600;margin-top:3px">' + esc(t(ti.ml != null ? 'newvial' : (ti.mg != null ? 'newpen' : 'newcart'))) + '</div>' : '')) + (ti.mg != null ? '<div style="font-size:12px;font-weight:700;color:#1B3A4B;margin-top:3px">🔘 ' + esc(ti.ml != null ? t('draw', { ml: ti.ml, mg: ti.mg }) : t('dial', { mg: ti.mg, c: ti.clicks })) + '</div>' : '');
+      else if (ti && (ti.t === 'rest' || ti.t === 'skip')) line = '😴 ' + t('today_rest');
+      else line = t('today_out');
+      h += '<div class="gh-today-box">' + line + '</div>';
+      if (ti && ti.t === 'inj') h += '<button class="gh-btn w" style="width:100%" data-gh="skip" data-d="' + today + '">' + esc(t('skip_today')) + '</button>';
+      else if (plan.skips && plan.skips[today]) h += '<button class="gh-btn o" style="width:100%" data-gh="undo" data-d="' + today + '">' + esc(t('undo')) + '</button>';
+      // 앞으로 7일
+      h += '<div class="gh-hint" style="margin-top:8px">' + esc(t('upcoming')) + '</div><div class="gh-up">';
+      for (var i = 0; i < 7; i++) {
+        var dd = addDays(today, i), inf = b.map[dd], dt = parse(dd);
+        var lab = (dt.getMonth() + 1) + '/' + dt.getDate();
+        if (!inf) h += '<div><span>' + lab + '</span><b>–</b></div>';
+        else if (inf.t === 'inj') h += '<div class="' + (inf.visit ? 't' : '') + '"><span>' + lab + '</span><b>' + inf.k + '/' + inf.n + '</b>' + (inf.split ? inf.segs.join('+') : inf.dose) + '</div>';
+        else if (inf.t === 'skip') h += '<div class="s"><span>' + lab + '</span><b>' + esc(t('c_skip')) + '</b></div>';
+        else h += '<div class="' + (inf.visit ? 't' : 'r') + '"><span>' + lab + '</span><b>' + esc(inf.visit ? t('c_visit') : t('c_rest')) + '</b></div>';
+      }
+      h += '</div>';
+    }
+    if (msg) h += '<div class="gh-msg' + (msg.charAt(0) === '!' ? ' bad' : '') + '">' + esc(msg.replace(/^!/, '')) + '</div>';
+    // 설정 폼
+    var p = plan || { dose: pen.keys[0], start: today, k0: 1, visit: '', run: 6 };
+    if (pen.keys.indexOf(p.dose) < 0 || (plan && plan.pen !== penId && plan.pen !== undefined && penId !== (plan.pen || 'g2'))) p = Object.assign({}, p, { dose: pen.keys[0], k0: 1 });
+    var N = tableOf(penId, p.dose).length;
+    h += '<details id="ghForm"' + (plan ? '' : ' open') + ' style="margin-top:8px"><summary style="cursor:pointer;font-weight:700;font-size:12px;color:#43555F">⚙️ ' + esc(plan ? t('edit') : t('make')) + '</summary>';
+    if (Object.keys(PENS).length > 1) h += '<div class="gh-row"><label>' + esc(t('f_pen')) + '<select id="ghPen">' + Object.keys(PENS).map(function (id) { return '<option value="' + id + '"' + (id === penId ? ' selected' : '') + '>' + esc(PENS[id].name) + '</option>'; }).join('') + '</select></label></div>';
+    h += '<div class="gh-row"><label>' + esc(t('f_dose')) + '<select id="ghDose">' + pen.keys.map(function (k) { return '<option value="' + k + '"' + (k === p.dose ? ' selected' : '') + '>' + k + ' ' + esc(pen.vial ? 'mg' : t('unit')) + '</option>'; }).join('') + '</select></label>';
+    h += '<label>' + esc(t('f_start')) + '<input type="date" id="ghStart" value="' + p.start + '"></label></div>';
+    h += '<div class="gh-row"><label>' + esc(t('f_k')) + '<select id="ghK">' + Array.apply(null, Array(N)).map(function (_, i) { return '<option value="' + (i + 1) + '"' + ((+p.k0 || 1) === i + 1 ? ' selected' : '') + '>' + (i + 1) + '/' + N + '</option>'; }).join('') + '</select></label>';
+    h += '<label>' + esc(t('f_visit')) + '<input type="date" id="ghVisit" value="' + (p.visit || '') + '"></label></div>';
+    h += '<div class="gh-row"><label>' + esc(t('f_run')) + '<select id="ghRun">' + [3, 4, 5, 6, 7].map(function (n) { return '<option value="' + n + '"' + ((+p.run || 6) === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></label></div>';
+    h += '<div class="gh-hint" id="ghHint"></div>';
+    h += '<div style="display:flex;gap:8px;margin-top:6px"><button class="gh-btn p" style="flex:1" data-gh="make">' + esc(t('make')) + '</button>' + (plan ? '<button class="gh-btn o" data-gh="del">' + esc(t('del')) + '</button>' : '') + '</div></details>';
+    h += '<div class="gh-note">' + esc(t('note')) + '</div>';
+    host.innerHTML = h;
+    hint();
+  }
+  function hint() {
+    var el = document.getElementById('ghHint'), sel = document.getElementById('ghDose'); if (!el || !sel) return;
+    var pe = document.getElementById('ghPen'), seq = tableOf(pe ? pe.value : 'g2', sel.value); el.textContent = t('hint_set', { n: seq.length, t: r1(sum(seq.map(sum))) });
+  }
+
+  function all() { panel(); decorate(); }
+
+  /* ───── 하루 단위: 건너뛰기 / 되돌리기 ───── */
+  function setSkip(date, on) {
+    var plan = load(); if (!plan) return;
+    plan.skips = plan.skips || {};
+    if (on) plan.skips[date] = 1; else delete plan.skips[date];
+    save(plan);
+    msg = '';
+    if (on) {
+      var b = build(plan), nx = addDays(date, 1), inf = b.map[nx];
+      var n2 = nx; var g = 0; while (b.map[n2] && b.map[n2].t !== 'inj' && g++ < 3) n2 = addDays(n2, 1);
+      var ii = b.map[n2];
+      if (ii && ii.t === 'inj') msg = t('moved', { k: ii.k, n: ii.n, dose: ii.split ? ii.segs.join('+') + '=' + ii.dose : ii.dose });
+    }
+    all(); dayBox(date);
+  }
+
+  /* ───── 날짜 눌렀을 때 뜨는 창 위쪽에 안내 ───── */
+  function dayBox(date) {
+    var mc = document.querySelector('#recordModal .modal-content'); if (!mc) return;
+    var old = document.getElementById('ghDayBox'); if (old) old.remove();
+    var plan = load(); if (!plan || !date) return;
+    var b = build(plan), inf = b.map[date]; if (!inf) return;
+    var h = '';
+    if (inf.t === 'inj') {
+      h = '💉 <b>' + esc(dayText(inf)) + '</b>' + (inf.visit ? '<br>🏥 ' + esc(t('visit_day')) : '') + '<button class="gh-btn w" data-gh="skip" data-d="' + date + '">' + esc(t('skip')) + '</button>';
+    } else if (inf.t === 'skip') {
+      h = '⏭ <b>' + esc(t('skipped_day')) + '</b><button class="gh-btn o" data-gh="undo" data-d="' + date + '">' + esc(t('undo')) + '</button>';
+    } else if (inf.t === 'rest') h = '😴 <b>' + esc(t('rest_day')) + '</b>' + (inf.visit ? '<br>🏥 ' + esc(t('visit_day')) : '');
+    else if (inf.visit) h = '🏥 <b>' + esc(t('visit_day')) + '</b>';
+    if (!h) return;
+    var box = document.createElement('div'); box.id = 'ghDayBox'; box.className = 'gh-daybox'; box.innerHTML = h;
+    var hd = mc.querySelector('.modal-header');
+    if (hd && hd.nextSibling) mc.insertBefore(box, hd.nextSibling); else mc.appendChild(box);
+  }
+
+  /* ───── 이벤트 ───── */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-gh]'); if (!b) return;
+    var a = b.getAttribute('data-gh');
+    if (a === 'skip') setSkip(b.getAttribute('data-d'), true);
+    else if (a === 'undo') setSkip(b.getAttribute('data-d'), false);
+    else if (a === 'del') { if (confirm(t('delq'))) { save(null); msg = ''; formPen = null; all(); } }
+    else if (a === 'make') {
+      var dose = document.getElementById('ghDose').value, start = document.getElementById('ghStart').value;
+      if (!dose || !parse(start)) { msg = '!' + t('need'); panel(); return; }
+      var old = load();
+      var penEl = document.getElementById('ghPen'); formPen = null;
+      save({ pen: penEl ? penEl.value : 'g2', dose: dose, start: start, k0: +document.getElementById('ghK').value || 1, visit: document.getElementById('ghVisit').value || '', run: +document.getElementById('ghRun').value || 6,
+             skips: (old && old.dose === dose && old.start === start && (old.pen || 'g2') === (penEl ? penEl.value : 'g2')) ? (old.skips || {}) : {} });
+      msg = ''; all();
+      var f = document.getElementById('ghForm'); if (f) f.open = false;
+    }
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'ghPen') { formPen = e.target.value; var fo = document.getElementById('ghForm'); panel(); fo = document.getElementById('ghForm'); if (fo) fo.open = true; return; }
+    if (e.target && e.target.id === 'ghDose') {
+      hint();
+      var pe0 = document.getElementById('ghPen'), N = tableOf(pe0 ? pe0.value : 'g2', e.target.value).length, ks = document.getElementById('ghK');
+      if (ks) ks.innerHTML = Array.apply(null, Array(N)).map(function (_, i) { return '<option value="' + (i + 1) + '">' + (i + 1) + '/' + N + '</option>'; }).join('');
+    }
+  });
+
+  /* ───── 달력 함수에 끼워 넣기 (기존 코드는 그대로) ───── */
+  function wrap(name, after) {
+    var orig = window[name]; if (typeof orig !== 'function') return;
+    window[name] = function () { var r = orig.apply(this, arguments); try { after.apply(this, arguments); } catch (e) { console.error('[gh-cycle]', e); } return r; };
+  }
+  function init() {
+    css();
+    wrap('renderMonths', function () { all(); });
+    wrap('openRecord', function (d) { dayBox(d); });
+    wrap('jrdApplyLang', function () { msg = ''; all(); });
+    all();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  window.jrdGh = { build: build, TABLES: TABLES, PENS: PENS };
+})();
+
+/* ════════════════════════════════════════════════════════════════
+ * 억제주사(성조숙증) 스케줄 — 주사한 날을 등록하면 다음 주사 권장일 주변을 달력에 색으로 표시
+ *   · 권장일 = 맞은 날 + 제품 간격(1개월형 28일, 3개월형 84일, 6개월형 168일 / 직접 입력 가능)
+ *   · 권장일 3일 전부터 연한 초록이 점점 진해지고, 권장일에 가장 진하며, 지난 뒤 2일은 연보라가 서서히 사라짐
+ * ════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  var PRODUCTS = [
+    { id: 'lor1', ko: '로렐린 1개월 (피하)', en: 'Lorelin 1-month (SC)', days: 28 },
+    { id: 'dip1', ko: '디페렐린 1개월 (근육)', en: 'Diphereline 1-month (IM)', days: 28 },
+    { id: 'leu3', ko: '루프린 3개월 (피하)', en: 'Leuprin 3-month (SC)', days: 84 },
+    { id: 'dip3', ko: '디페렐린 3개월 (근육)', en: 'Diphereline 3-month (IM)', days: 84 },
+    { id: 'eli6', ko: '엘리가드 6개월 (피하)', en: 'Eligard 6-month (SC)', days: 168 },
+    { id: 'dip6', ko: '디페렐린 6개월 (근육)', en: 'Diphereline 6-month (IM)', days: 168 },
+    { id: 'etc', ko: '직접 입력', en: 'Custom', days: 28 }
+  ];
+  var BEFORE = 3, AFTER = 2;
+  var SX = {
+    ko: { ics_btn: '📅 폰 캘린더에 알림 추가', ics_time: '알림 시각', ics_hint: '다음 주사 권장일 알림 파일을 받아 폰 캘린더에 열어 저장하면, 3일 전·하루 전·당일에 알림이 울려요', ics_title: '억제주사 권장일', ics_desc: '3일 전·하루 전·당일에 알림이 울립니다. 담당 의사에게 예약 일정을 확인하세요.', title: '💜 억제주사 스케줄 (성조숙증)', sub: '주사 맞은 날을 등록하면 다음 주사 권장일이 달력에 색으로 표시돼요', prod: '주사 종류', date: '주사 맞은 날', days: '간격(일)', add: '주사 등록', hist: '등록한 주사', next: '다음 주사 권장일 {d} ({dd})', dd0: '오늘', ddf: 'D-{n}', ddp: '{n}일 지남', none: '주사를 등록하면 다음 권장일이 표시돼요', del: '삭제', delq: '이 주사 기록을 삭제할까요?', need: '주사 맞은 날을 입력해 주세요', lg: '초록 = 권장일 전후(진할수록 권장일), 보라 = 권장일이 지난 뒤', c_due: '권장일', c_inj: '주사', note: '권장일은 간격(1개월형 28일, 3개월형 84일, 6개월형 168일) 기준 참고용입니다. 실제 주사일은 담당 의사 안내를 따라 주세요.' },
+    en: { ics_btn: '📅 Add reminder to phone calendar', ics_time: 'Reminder time', ics_hint: 'Download the file and open it in your phone calendar to get alerts 3 days before, 1 day before and on the day', ics_title: 'GnRH injection due', ics_desc: 'Alerts 3 days before, 1 day before and on the day. Please confirm your appointment with the doctor.', title: '💜 GnRH suppression injection schedule', sub: 'Register the date of each injection to see the next due date on the calendar', prod: 'Injection', date: 'Date given', days: 'Interval (days)', add: 'Register', hist: 'Registered injections', next: 'Next injection due {d} ({dd})', dd0: 'today', ddf: 'in {n} days', ddp: '{n} days overdue', none: 'Register an injection to see the next due date', del: 'Delete', delq: 'Delete this injection record?', need: 'Enter the date the injection was given', lg: 'Green = around the due date (darkest on the day), purple = after the due date', c_due: 'Due', c_inj: 'Given', note: "The due date is a guide based on the interval (28 days for monthly, 84 for 3-month, 168 for 6-month). Follow your doctor's instructions." },
+    zh: { ics_btn: '📅 添加到手机日历提醒', ics_time: '提醒时间', ics_hint: '下载文件并用手机日历打开保存，将在3天前、1天前和当天提醒', ics_title: '抑制针建议日', ics_desc: '将在3天前、1天前和当天提醒。请向医生确认预约。', title: '💜 抑制针日程（性早熟）', sub: '登记每次注射日期，日历上会标出下次注射建议日', prod: '针剂', date: '注射日期', days: '间隔（天）', add: '登记', hist: '已登记的注射', next: '下次注射建议日 {d}（{dd}）', dd0: '今天', ddf: '还有{n}天', ddp: '已过{n}天', none: '登记注射后会显示下次建议日', del: '删除', delq: '要删除这条注射记录吗？', need: '请输入注射日期', lg: '绿色 = 建议日前后（建议日当天最深），紫色 = 建议日之后', c_due: '建议日', c_inj: '已注射', note: '建议日按间隔（月制28天、3个月84天、6个月168天）推算，仅供参考，请遵医嘱。' },
+    'zh-TW': { ics_btn: '📅 加入手機行事曆提醒', ics_time: '提醒時間', ics_hint: '下載檔案並用手機行事曆開啟儲存，將在3天前、1天前和當天提醒', ics_title: '抑制針建議日', ics_desc: '將在3天前、1天前和當天提醒。請向醫師確認預約。', title: '💜 抑制針行程（性早熟）', sub: '登記每次注射日期，日曆上會標出下次注射建議日', prod: '針劑', date: '注射日期', days: '間隔（天）', add: '登記', hist: '已登記的注射', next: '下次注射建議日 {d}（{dd}）', dd0: '今天', ddf: '還有{n}天', ddp: '已過{n}天', none: '登記注射後會顯示下次建議日', del: '刪除', delq: '要刪除這筆注射記錄嗎？', need: '請輸入注射日期', lg: '綠色 = 建議日前後（建議日當天最深），紫色 = 建議日之後', c_due: '建議日', c_inj: '已注射', note: '建議日依間隔（月劑28天、3個月84天、6個月168天）推算，僅供參考，請依醫師指示。' },
+    ja: { ics_btn: '📅 スマホのカレンダーに通知を追加', ics_time: '通知時刻', ics_hint: 'ファイルをダウンロードしてスマホのカレンダーで開くと、3日前・前日・当日に通知されます', ics_title: '抑制注射の推奨日', ics_desc: '3日前・前日・当日に通知します。予約日は主治医に確認してください。', title: '💜 抑制注射スケジュール（思春期早発症）', sub: '注射した日を登録すると、次回の推奨日がカレンダーに色で表示されます', prod: '注射の種類', date: '注射した日', days: '間隔（日）', add: '登録', hist: '登録した注射', next: '次回注射の推奨日 {d}（{dd}）', dd0: '今日', ddf: 'あと{n}日', ddp: '{n}日超過', none: '注射を登録すると次回の推奨日が表示されます', del: '削除', delq: 'この注射の記録を削除しますか？', need: '注射した日を入力してください', lg: '緑＝推奨日の前後（当日が最も濃い）、紫＝推奨日を過ぎた後', c_due: '推奨日', c_inj: '注射', note: '推奨日は間隔（1か月製剤28日、3か月84日、6か月168日）に基づく目安です。実際の注射日は主治医の指示に従ってください。' },
+    vi: { ics_btn: '📅 Thêm nhắc nhở vào lịch điện thoại', ics_time: 'Giờ nhắc', ics_hint: 'Tải tệp và mở bằng lịch điện thoại để nhận nhắc trước 3 ngày, 1 ngày và đúng ngày', ics_title: 'Ngày tiêm ức chế', ics_desc: 'Nhắc trước 3 ngày, 1 ngày và đúng ngày. Hãy xác nhận lịch hẹn với bác sĩ.', title: '💜 Lịch tiêm thuốc ức chế (dậy thì sớm)', sub: 'Đăng ký ngày đã tiêm để lịch hiển thị ngày tiêm tiếp theo bằng màu', prod: 'Loại thuốc tiêm', date: 'Ngày đã tiêm', days: 'Khoảng cách (ngày)', add: 'Đăng ký', hist: 'Các mũi đã đăng ký', next: 'Ngày tiêm tiếp theo {d} ({dd})', dd0: 'hôm nay', ddf: 'còn {n} ngày', ddp: 'quá {n} ngày', none: 'Đăng ký mũi tiêm để xem ngày tiếp theo', del: 'Xóa', delq: 'Xóa bản ghi mũi tiêm này?', need: 'Hãy nhập ngày đã tiêm', lg: 'Xanh = quanh ngày khuyến nghị (đậm nhất đúng ngày), tím = sau ngày khuyến nghị', c_due: 'Dự kiến', c_inj: 'Đã tiêm', note: 'Ngày khuyến nghị tính theo khoảng cách (1 tháng 28 ngày, 3 tháng 84 ngày, 6 tháng 168 ngày), chỉ để tham khảo. Hãy làm theo hướng dẫn của bác sĩ.' },
+    th: { ics_btn: '📅 เพิ่มการแจ้งเตือนในปฏิทินมือถือ', ics_time: 'เวลาแจ้งเตือน', ics_hint: 'ดาวน์โหลดไฟล์แล้วเปิดในปฏิทินมือถือ จะแจ้งเตือนก่อน 3 วัน 1 วัน และในวันนั้น', ics_title: 'วันแนะนำฉีดยากดฮอร์โมน', ics_desc: 'แจ้งเตือนก่อน 3 วัน 1 วัน และในวันนั้น โปรดยืนยันนัดกับแพทย์', title: '💜 ตารางฉีดยากดฮอร์โมน (เข้าสู่วัยหนุ่มสาวเร็ว)', sub: 'บันทึกวันที่ฉีด แล้วปฏิทินจะแสดงวันแนะนำฉีดครั้งถัดไปเป็นสี', prod: 'ชนิดยาฉีด', date: 'วันที่ฉีด', days: 'ระยะห่าง (วัน)', add: 'บันทึก', hist: 'การฉีดที่บันทึกไว้', next: 'วันแนะนำฉีดครั้งถัดไป {d} ({dd})', dd0: 'วันนี้', ddf: 'อีก {n} วัน', ddp: 'เลย {n} วัน', none: 'บันทึกการฉีดเพื่อดูวันแนะนำครั้งถัดไป', del: 'ลบ', delq: 'ลบบันทึกการฉีดนี้หรือไม่', need: 'กรุณากรอกวันที่ฉีด', lg: 'เขียว = ช่วงรอบวันแนะนำ (เข้มสุดในวันนั้น), ม่วง = หลังวันแนะนำ', c_due: 'วันแนะนำ', c_inj: 'ฉีดแล้ว', note: 'วันแนะนำคำนวณจากระยะห่าง (รายเดือน 28 วัน, 3 เดือน 84 วัน, 6 เดือน 168 วัน) ใช้เป็นแนวทางเท่านั้น โปรดทำตามคำแนะนำของแพทย์' },
+    id: { ics_btn: '📅 Tambahkan pengingat ke kalender ponsel', ics_time: 'Jam pengingat', ics_hint: 'Unduh berkas dan buka di kalender ponsel untuk pengingat 3 hari, 1 hari sebelum, dan pada harinya', ics_title: 'Jadwal suntik penekan', ics_desc: 'Pengingat 3 hari, 1 hari sebelum, dan pada harinya. Konfirmasi janji dengan dokter.', title: '💜 Jadwal suntik penekan (pubertas dini)', sub: 'Catat tanggal suntik agar kalender menandai tanggal suntik berikutnya dengan warna', prod: 'Jenis suntikan', date: 'Tanggal disuntik', days: 'Interval (hari)', add: 'Catat', hist: 'Suntikan tercatat', next: 'Suntikan berikutnya {d} ({dd})', dd0: 'hari ini', ddf: '{n} hari lagi', ddp: 'lewat {n} hari', none: 'Catat suntikan untuk melihat tanggal berikutnya', del: 'Hapus', delq: 'Hapus catatan suntikan ini?', need: 'Isi tanggal suntikan', lg: 'Hijau = sekitar tanggal anjuran (paling pekat di hari itu), ungu = setelah tanggal anjuran', c_due: 'Jadwal', c_inj: 'Disuntik', note: 'Tanggal anjuran berdasarkan interval (bulanan 28 hari, 3 bulan 84 hari, 6 bulan 168 hari) hanya sebagai panduan. Ikuti arahan dokter.' },
+    es: { ics_btn: '📅 Añadir recordatorio al calendario del móvil', ics_time: 'Hora del aviso', ics_hint: 'Descargue el archivo y ábralo en el calendario del móvil para recibir avisos 3 días antes, 1 día antes y el mismo día', ics_title: 'Inyección supresora recomendada', ics_desc: 'Avisos 3 días antes, 1 día antes y el mismo día. Confirme la cita con el médico.', title: '💜 Calendario de inyecciones supresoras (pubertad precoz)', sub: 'Registre la fecha de cada inyección y el calendario marcará con color la próxima', prod: 'Inyección', date: 'Fecha de aplicación', days: 'Intervalo (días)', add: 'Registrar', hist: 'Inyecciones registradas', next: 'Próxima inyección {d} ({dd})', dd0: 'hoy', ddf: 'en {n} días', ddp: '{n} días de retraso', none: 'Registre una inyección para ver la próxima fecha', del: 'Eliminar', delq: '¿Eliminar este registro de inyección?', need: 'Indique la fecha de la inyección', lg: 'Verde = alrededor de la fecha recomendada (más intenso ese día), morado = después de la fecha', c_due: 'Toca', c_inj: 'Puesta', note: 'La fecha es una guía según el intervalo (mensual 28 días, trimestral 84, semestral 168). Siga las indicaciones del médico.' },
+    ar: { ics_btn: '📅 إضافة تذكير إلى تقويم الهاتف', ics_time: 'وقت التذكير', ics_hint: 'نزّل الملف وافتحه في تقويم الهاتف لتصلك تنبيهات قبل 3 أيام ويوم واحد وفي اليوم نفسه', ics_title: 'موعد حقنة الكبح', ics_desc: 'تنبيهات قبل 3 أيام ويوم واحد وفي اليوم نفسه. أكّد الموعد مع الطبيب.', title: '💜 جدول حقن الكبح (البلوغ المبكر)', sub: 'سجّل تاريخ كل حقنة ليُظهر التقويم موعد الحقنة التالية بالألوان', prod: 'نوع الحقنة', date: 'تاريخ الحقنة', days: 'الفاصل (أيام)', add: 'تسجيل', hist: 'الحقن المسجّلة', next: 'موعد الحقنة التالية {d} ({dd})', dd0: 'اليوم', ddf: 'بعد {n} يوم', ddp: 'تأخرت {n} يوم', none: 'سجّل حقنة لإظهار الموعد التالي', del: 'حذف', delq: 'هل تريد حذف سجل هذه الحقنة؟', need: 'أدخل تاريخ الحقنة', lg: 'الأخضر = حول الموعد المقترح (الأغمق في يومه)، البنفسجي = بعد الموعد', c_due: 'الموعد', c_inj: 'مُعطاة', note: 'الموعد المقترح تقدير حسب الفاصل (شهري 28 يوماً، 3 أشهر 84، 6 أشهر 168). اتبع تعليمات الطبيب.' },
+    mn: { ics_btn: '📅 Утасны календарьт сануулга нэмэх', ics_time: 'Сануулах цаг', ics_hint: 'Файлыг татаж утасны календарьт нээвэл 3 хоногийн, 1 хоногийн өмнө болон тухайн өдөр сануулна', ics_title: 'Дарангуйлах тарилгын өдөр', ics_desc: '3 хоногийн, 1 хоногийн өмнө болон тухайн өдөр сануулна. Эмчтэйгээ цагаа баталгаажуулна уу.', title: '💜 Дарангуйлах тариа (эрт бэлгийн бойжилт)', sub: 'Тарьсан өдрөө бүртгэвэл дараагийн тарилгын өдөр календарьт өнгөөр харагдана', prod: 'Тарилгын төрөл', date: 'Тарьсан өдөр', days: 'Давтамж (хоног)', add: 'Бүртгэх', hist: 'Бүртгэсэн тарилгууд', next: 'Дараагийн тарилга {d} ({dd})', dd0: 'өнөөдөр', ddf: '{n} хоногийн дараа', ddp: '{n} хоног хэтэрсэн', none: 'Тарилга бүртгэвэл дараагийн өдөр харагдана', del: 'Устгах', delq: 'Энэ тарилгын бүртгэлийг устгах уу?', need: 'Тарьсан өдрөө оруулна уу', lg: 'Ногоон = зөвлөмж өдрийн орчим (тэр өдөр хамгийн бараан), нил ягаан = зөвлөмж өдрөөс хойш', c_due: 'Өдөр', c_inj: 'Тарьсан', note: 'Зөвлөмж өдөр нь давтамжид (1 сарын 28, 3 сарын 84, 6 сарын 168 хоног) үндэслэсэн лавлагаа юм. Эмчийнхээ зааврыг дага.' }
+  };
+  function lang() {
+    var l = (window.JRD_LANG || document.documentElement.getAttribute('lang') || 'ko');
+    if (/^zh-?(tw|hant|hk)$/i.test(l) || l === 'zt') return 'zh-TW';
+    l = String(l).split('-')[0].toLowerCase() === 'zh' ? 'zh' : String(l).toLowerCase();
+    return SX[l] ? l : (l === 'ko' ? 'ko' : 'en');
+  }
+  function t(k, v) { var s = (SX[lang()] || SX.ko)[k]; if (s == null) s = SX.ko[k] || k; if (v) Object.keys(v).forEach(function (x) { s = s.split('{' + x + '}').join(v[x]); }); return s; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parse(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function addDays(s, n) { var d = parse(s); d.setDate(d.getDate() + n); return fmt(d); }
+  function diff(a, b) { return Math.round((parse(a) - parse(b)) / 86400000); }   // a - b (일)
+  function today() { return fmt(new Date()); }
+  function pname(p) { return lang() === 'ko' ? p.ko : p.en; }
+  function prodOf(id) { for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].id === id) return PRODUCTS[i]; return PRODUCTS[0]; }
+  function child() { try { return (typeof activeChildId !== 'undefined') ? activeChildId : 1; } catch (e) { return 1; } }
+  function key() { return 'jrdSupPlan_' + child(); }
+  function load() { try { var v = JSON.parse(localStorage.getItem(key()) || 'null'); return v && v.inj ? v : { inj: [] }; } catch (e) { return { inj: [] }; } }
+  function save(v) { try { localStorage.setItem(key(), JSON.stringify(v)); } catch (e) {} }
+  function nextDue(plan) {
+    if (!plan.inj.length) return null;
+    var last = plan.inj.slice().sort(function (a, b) { return a.d < b.d ? -1 : 1; }).pop();
+    var p = prodOf(last.p), days = +last.n || p.days;
+    return { due: addDays(last.d, days), last: last, days: days };
+  }
+
+  function css() {
+    if (document.getElementById('supCss')) return;
+    var s = document.createElement('style'); s.id = 'supCss';
+    s.textContent = [
+      '.sup-panel{max-width:680px;margin:10px auto;background:#fff;border:1.5px solid #8e6bb0;border-radius:12px;padding:12px 14px;color:#1B3A4B;font-size:13px}',
+      '.sup-panel h3{font-size:15px;margin:0 0 2px}.sup-panel .s{font-size:11px;color:#43555F;margin-bottom:8px}',
+      '.sup-panel input,.sup-panel select{-webkit-user-select:text;user-select:text;width:100%;margin-top:3px;padding:8px;border:1px solid #DED5C6;border-radius:8px;font-size:14px;background:#fff;color:#1B3A4B;font-family:inherit}',
+      '.sup-row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.sup-row label{flex:1;min-width:120px;font-size:11px;font-weight:700;color:#43555F;display:block}',
+      '.sup-btn{border:0;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;background:#6f4f94;color:#fff;font-family:inherit;width:100%;margin-top:4px}',
+      '.sup-next{background:#f1faf4;border:1px solid #bfe3cc;border-radius:10px;padding:9px 11px;margin:8px 0;font-weight:700;font-size:14px}',
+      '.sup-hist{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.sup-hist span{background:#f4eefa;border:1px solid #d9c8ea;border-radius:16px;padding:3px 9px;font-size:11.5px}',
+      '.sup-hist button{border:0;background:none;color:#B24E36;font-weight:700;cursor:pointer;margin-left:4px}',
+      '.sup-lg{font-size:10.5px;color:#43555F;margin-top:6px;line-height:1.5}.sup-note{font-size:10.5px;color:#7a8a93;margin-top:6px;line-height:1.5}',
+      '.day-cell.sup-g1{background:#f3fbf6!important}.day-cell.sup-g2{background:#e1f5e9!important}.day-cell.sup-g3{background:#c9edd8!important}',
+      '.day-cell.sup-t{background:#a8e0bf!important;border-color:#4caf7a!important}',
+      '.day-cell.sup-p1{background:#e6d8f3!important}.day-cell.sup-p2{background:#f5effb!important}',
+      '.day-cell .sup-chip{font-size:8px;line-height:1.15;font-weight:700;border-radius:6px;padding:1px 4px;max-width:98%;text-align:center}',
+      '.day-cell .sup-due{background:#2e8b57;color:#fff}.day-cell .sup-inj{background:#6f4f94;color:#fff}'
+    ].join('');
+    document.head.appendChild(s);
+  }
+
+  function decorate() {
+    var plan = load(), nd = nextDue(plan), injMap = {};
+    plan.inj.forEach(function (x) { injMap[x.d] = x; });
+    document.querySelectorAll('.day-cell').forEach(function (c) {
+      c.className = c.className.replace(/\bsup-(g1|g2|g3|t|p1|p2)\b/g, '').replace(/\s+/g, ' ').trim();
+      c.querySelectorAll('.sup-chip').forEach(function (x) { x.remove(); });
+      var m = /openRecord\('(\d{4}-\d{2}-\d{2})'/.exec(c.getAttribute('onclick') || ''); if (!m) return;
+      var d = m[1], html = '';
+      if (nd) {
+        // 마지막 주사일 기준으로 간격(days)마다 무기한 반복: last + days*m (m>=1)
+        var o = diff(d, nd.last.d), mm = Math.round(o / nd.days), k = o - mm * nd.days;   // k: 가장 가까운 권장일 대비 일수
+        if (mm >= 1 && k >= -BEFORE && k <= AFTER) {
+          var cls = k === 0 ? 'sup-t' : (k === -1 ? 'sup-g3' : (k === -2 ? 'sup-g2' : (k === -BEFORE ? 'sup-g1' : (k === 1 ? 'sup-p1' : 'sup-p2'))));
+          c.classList.add(cls);
+          if (k === 0) html += '<div class="sup-chip sup-due">' + esc(t('c_due')) + '</div>';
+        }
+      }
+      if (injMap[d]) html += '<div class="sup-chip sup-inj">💉' + esc(t('c_inj')) + '</div>';
+      if (html) c.insertAdjacentHTML('beforeend', html);
+    });
+  }
+
+  var formProd = null;
+  function panel() {
+    var host = document.getElementById('supPanel');
+    if (!host) {
+      host = document.createElement('div'); host.id = 'supPanel'; host.className = 'sup-panel';
+      var gh = document.getElementById('ghPanel'), anchor = gh || document.querySelector('.container');
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(host, anchor.nextSibling); else document.body.appendChild(host);
+    }
+    var plan = load(), nd = nextDue(plan), prodId = formProd || (plan.inj.length ? plan.inj[plan.inj.length - 1].p : 'lor1'), p = prodOf(prodId);
+    var h = '<h3>' + esc(t('title')) + '</h3><div class="s">' + esc(t('sub')) + '</div>';
+    if (nd) {
+      var dn = diff(nd.due, today()), dd = dn === 0 ? t('dd0') : (dn > 0 ? t('ddf', { n: dn }) : t('ddp', { n: -dn }));
+      var dt = parse(nd.due);
+      var more = []; for (var q = 2; q <= 5; q++) { var qd = parse(addDays(nd.last.d, nd.days * q)); more.push((qd.getMonth() + 1) + '/' + qd.getDate()); }
+      h += '<div class="sup-next">🗓 ' + esc(t('next', { d: (dt.getMonth() + 1) + '/' + dt.getDate(), dd: dd })) + '<div style="font-weight:500;font-size:12px;margin-top:3px">➜ ' + more.join(' · ') + ' …</div></div>';
+    } else h += '<div class="sup-next" style="background:#f7f4ef;border-color:#DED5C6;color:#7a8a93;font-weight:600">' + esc(t('none')) + '</div>';
+    h += '<div class="sup-row"><label>' + esc(t('prod')) + '<select id="supProd">' + PRODUCTS.map(function (x) { return '<option value="' + x.id + '"' + (x.id === prodId ? ' selected' : '') + '>' + esc(pname(x)) + '</option>'; }).join('') + '</select></label>';
+    h += '<label>' + esc(t('date')) + '<input type="date" id="supDate" value="' + today() + '"></label></div>';
+    h += '<div class="sup-row" id="supDaysRow"><label>' + esc(t('days')) + '<input type="number" id="supDays" min="7" max="400" value="' + p.days + '"></label></div>';
+    h += '<button class="sup-btn" data-sup="add">' + esc(t('add')) + '</button>';
+    if (nd) {
+      h += '<div style="margin-top:10px;padding-top:8px;border-top:1px dashed #DED5C6"><div class="sup-row"><label>' + esc(t('ics_time')) + '<input type="time" id="supTime" value="' + (localStorage.getItem('jrdSupTime') || '09:00') + '"></label></div>';
+      h += '<button class="sup-btn" style="background:#2e8b57" data-sup="ics">' + esc(t('ics_btn')) + '</button><div class="sup-lg">' + esc(t('ics_hint')) + '</div></div>';
+    }
+    if (plan.inj.length) {
+      h += '<div class="sup-lg" style="margin-top:10px;font-weight:700">' + esc(t('hist')) + '</div><div class="sup-hist">';
+      plan.inj.slice().sort(function (a, b) { return a.d < b.d ? 1 : -1; }).forEach(function (x) {
+        var dd = parse(x.d); h += '<span>' + (dd.getMonth() + 1) + '/' + dd.getDate() + ' · ' + esc(pname(prodOf(x.p))) + ' · ' + (+x.n || prodOf(x.p).days) + '<button data-sup="del" data-d="' + x.d + '" title="' + esc(t('del')) + '">✕</button></span>';
+      });
+      h += '</div>';
+    }
+    h += '<div class="sup-lg">' + esc(t('lg')) + '</div><div class="sup-note">' + esc(t('note')) + '</div>';
+    host.innerHTML = h;
+  }
+  function all() { panel(); decorate(); }
+
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'supProd') { formProd = e.target.value; var dv = document.getElementById('supDate').value; panel(); var el = document.getElementById('supDate'); if (el && dv) el.value = dv; }
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-sup]'); if (!b) return;
+    var a = b.getAttribute('data-sup'), plan = load();
+    if (a === 'add') {
+      var d = document.getElementById('supDate').value, pr = document.getElementById('supProd').value, n = +document.getElementById('supDays').value || prodOf(pr).days;
+      if (!parse(d)) { alert(t('need')); return; }
+      plan.inj = plan.inj.filter(function (x) { return x.d !== d; }); plan.inj.push({ d: d, p: pr, n: n });
+      save(plan); formProd = null; all();
+    } else if (a === 'ics') {
+      var nd2 = nextDue(plan); if (!nd2) return;
+      var tm = (document.getElementById('supTime') || {}).value || '09:00'; try { localStorage.setItem('jrdSupTime', tm); } catch (e2) {}
+      var hh = tm.split(':'), ymd = nd2.due.replace(/-/g, ''), st = ymd + 'T' + pad(+hh[0]) + pad(+hh[1] || 0) + '00';
+      var endD = new Date(parse(nd2.due)); endD.setHours(+hh[0], (+hh[1] || 0) + 30, 0, 0);
+      var en = fmt(endD).replace(/-/g, '') + 'T' + pad(endD.getHours()) + pad(endD.getMinutes()) + '00';
+      var nm = pname(prodOf(nd2.last.p)), sm = t('ics_title') + ' - ' + nm;
+      var ev = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Jarada//Suppression//KO', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
+        'UID:jrd-sup-' + nd2.due + '-' + child() + '@jarada', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, ''),
+        'DTSTART:' + st, 'DTEND:' + en, 'RRULE:FREQ=DAILY;INTERVAL=' + nd2.days + ';COUNT=12', 'SUMMARY:' + sm.replace(/[,;]/g, ' '), 'DESCRIPTION:' + t('ics_desc').replace(/[,;]/g, ' '),
+        'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + sm.replace(/[,;]/g, ' '), 'TRIGGER:-P3D', 'END:VALARM',
+        'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + sm.replace(/[,;]/g, ' '), 'TRIGGER:-P1D', 'END:VALARM',
+        'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + sm.replace(/[,;]/g, ' '), 'TRIGGER:PT0M', 'END:VALARM',
+        'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+      var a2 = document.createElement('a'); a2.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ev); a2.download = 'jarada-suppression-' + nd2.due + '.ics';
+      document.body.appendChild(a2); a2.click(); a2.remove();
+    } else if (a === 'del') {
+      if (confirm(t('delq'))) { plan.inj = plan.inj.filter(function (x) { return x.d !== b.getAttribute('data-d'); }); save(plan); all(); }
+    }
+  });
+  function wrap(name, after) {
+    var orig = window[name]; if (typeof orig !== 'function') return;
+    window[name] = function () { var r = orig.apply(this, arguments); try { after.apply(this, arguments); } catch (e) { console.error('[sup]', e); } return r; };
+  }
+  function init() { css(); wrap('renderMonths', all); wrap('jrdApplyLang', all); all(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+
+</script>
 </body>
 </html>
