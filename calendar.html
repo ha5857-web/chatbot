@@ -4898,6 +4898,7 @@ function jrdGoBack(){
     if (document.getElementById('ghCss')) return;
     var s = document.createElement('style'); s.id = 'ghCss';
     s.textContent = [
+      'body>.gh-panel,body>.sup-panel{grid-column:1/-1;width:100%;max-width:680px;box-sizing:border-box;justify-self:center}',
       '.gh-panel{max-width:680px;margin:10px auto;background:#fff;border:1.5px solid #C0902C;border-radius:12px;padding:12px 14px;color:#1B3A4B;font-size:13px;-webkit-user-select:text;user-select:text}',
       '.gh-panel input,.gh-panel select{-webkit-user-select:text;user-select:text}',
       '.gh-panel h3{font-size:15px;margin:0 0 2px}.gh-panel .gh-sub{font-size:11px;color:#43555F;margin-bottom:8px}',
