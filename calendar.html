@@ -4722,7 +4722,7 @@ function jrdGoBack(){
    * ② gen 방식: mg 다이얼 펜 — 펜 1개를 남김없이 쓰도록 전체 클릭 수를 N회(=총단위÷설정용량 반올림)에 고르게 나눔(앞쪽이 1클릭 적게)
    *    gen = { mg: 1클릭당 mg, total: 총 mg, minMg/maxMg: 1회 최소·최대 mg, step: 설정용량 간격(단위) }, 1mg = 3단위 */
   var PENS = {
-    g2: { name: '동아 그로트로핀투 카트리지 30IU · 그로트로핀-II Pen (비급여)', cart: 30, keys: ['2.6', '2.8', '3', '3.4', '3.8', '4.2', '4.6', '5', '5.4', '6', '6.6', '7.4'], spec: SPEC }
+    g2: { name: '동아 그로트로핀투 카트리지 30IU (비급여) · 그로트로핀-II Pen', cart: 30, inuse: 28, keys: ['2.6', '2.8', '3', '3.4', '3.8', '4.2', '4.6', '5', '5.4', '6', '6.6', '7.4'], spec: SPEC }
   };
   function addGen(id, name, g) {
     g.unit = g.mg * 3; g.clicks = Math.round(g.total / g.mg); g.minC = Math.round(g.minMg / g.mg); g.maxC = Math.round(g.maxMg / g.mg);
@@ -4733,7 +4733,9 @@ function jrdGoBack(){
       var N = Math.round(tot / T); if (N < 3 || N > 40) continue;
       var base = Math.floor(g.clicks / N), extra = g.clicks - base * N;
       if (base < g.minC || base + (extra ? 1 : 0) > g.maxC) continue;
-      if (seenN[N]) continue; seenN[N] = 1;
+      if (seenN[N]) continue;
+      if (g.inuse && penCounts(g, genSeq(g, String(T)).list) > perPenMax(g.inuse)) continue;   // 펜 1개를 사용기한 안에 못 쓰는 묶음은 제외
+      seenN[N] = 1;
       PENS[id].keys.push(String(T));
     }
     // 펜 2개 묶음: 한 번은 두 펜에 걸쳐 맞는 회차가 생기는 대신 선택지가 촘촘해짐 (홀수 회수만 — 짝수는 펜 1개 묶음을 두 번 쓰는 것과 같음)
@@ -4741,9 +4743,17 @@ function jrdGoBack(){
     for (var N2 = 5; N2 <= 41; N2 += 2) {
       var b2 = Math.floor(C2 / N2), e2 = C2 - b2 * N2;
       if (b2 < g.minC || b2 + (e2 ? 1 : 0) > g.maxC) continue;
+      if (g.inuse && penCounts(g, genSeq(g, 'M2N' + N2).list) > perPenMax(g.inuse)) continue;
       PENS[id].keys.push('M2N' + N2);
     }
     PENS[id].keys.sort(function (a, b) { return avgOf(g, a) - avgOf(g, b); });
+  }
+  // 첫 사용 후 사용기한(일) → 펜·카트리지·바이알 1개로 맞을 수 있는 최대 횟수 (6일 맞고 1일 쉬기 기준)
+  function perPenMax(days) { return Math.max(1, Math.floor(days * 6 / 7)); }
+  function penCounts(g, list) {   // 각 펜(카트리지)에 걸치는 주사 횟수 중 최댓값 (두 펜에 걸친 회차는 양쪽 모두 셈)
+    var used = 0, cnt = {}, mx = 0;
+    list.forEach(function (c) { var p0 = Math.floor(used / g.clicks), p1 = Math.floor((used + c - 1) / g.clicks); for (var q = p0; q <= p1; q++) { cnt[q] = (cnt[q] || 0) + 1; if (cnt[q] > mx) mx = cnt[q]; } used += c; });
+    return mx;
   }
   function avgOf(g, k) { var m = /^M(\d)N(\d+)$/.exec(k); return m ? g.clicks * g.unit * (+m[1]) / (+m[2]) : parseFloat(k); }
   function genSeq(g, k) {   // → { N, M, list: [클릭수...] }
@@ -4752,38 +4762,72 @@ function jrdGoBack(){
     for (var i = 0; i < N; i++) list.push(base + (i >= N - extra ? 1 : 0));
     return { N: N, M: M, list: list, base: base, extra: extra };
   }
-  // ── 동아에스티 (식약처·심평원 정보 기준) ──
-  // 그로트로핀투주사액 아이펜 30IU/2.7mL (급여, 일체형): 0.1IU 단위 조절, 1회 최대 8.9IU
-  addGen('ip30', '동아 그로트로핀투 아이펜 30IU (급여·일체형)', { mg: 0.1 / 3, total: 10, minMg: 0.1 / 3, maxMg: 8.9 / 3, step: 0.5, iu: true });
-  // 그로트로핀투주사액 아이펜 20IU/1.8mL: 0.1IU 단위 조절 (1회 최대는 자료 미확인 → 한 세트 3회 이상으로 제한)
-  addGen('ip20', '동아 그로트로핀투 아이펜 20IU (일체형)', { mg: 0.1 / 3, total: 20 / 3, minMg: 0.1 / 3, maxMg: 20 / 9, step: 0.5, iu: true });
-  // 그로트로핀-II Pen(전자식)용 카트리지 20IU: 0.2IU 단위, 1회 최대 15IU (30IU 카트리지는 병원 환산표 사용)
-  addGen('dc20', '동아 그로트로핀투 카트리지 20IU · 그로트로핀-II Pen', { mg: 0.2 / 3, total: 20 / 3, minMg: 0.2 / 3, maxMg: 20 / 9, step: 0.5, iu: true });
-  // 지노트로핀 고퀵 12mg: 0.15mg/클릭, 1회 0.3~4.5mg (화이자 매뉴얼)
-  addGen('gq', '지노트로핀 고퀵 36단위(12mg)', { mg: 0.15, total: 12, minMg: 0.3, maxMg: 4.5, step: 0.5 });
-  // 지노트로핀 고퀵 5.3mg(16단위): 0.05mg/클릭, 1회 0.1~1.5mg (화이자 매뉴얼)
-  addGen('gq53', '지노트로핀 고퀵 16단위(5.3mg)', { mg: 0.05, total: 5.3, minMg: 0.1, maxMg: 1.5, step: 0.25 });
-  // 지노트로핀주(급여) 카트리지 + 지노트로핀 펜: 5.3mg → 0.1mg/클릭·최대 2mg, 12mg → 0.2mg/클릭·최대 4mg (한국화이자 허가문서)
-  addGen('gp53', '지노트로핀주 5.3mg 카트리지(급여·지노트로핀 펜)', { mg: 0.1, total: 5.3, minMg: 0.1, maxMg: 2.0, step: 0.25 });
-  addGen('gp12', '지노트로핀주 12mg 카트리지(급여·지노트로핀 펜)', { mg: 0.2, total: 12, minMg: 0.2, maxMg: 4.0, step: 0.5 });
-  // 노디트로핀 플렉스프(지나브)펜: 5mg=0.025mg/클릭·최대2.0mg, 10mg=0.05mg/클릭·최대4.0mg, 15mg=0.1mg/클릭·최대8.0mg (유럽 허가문서)
-  addGen('nd5', '노디트로핀 지나브펜 5mg/1.5mL', { mg: 0.025, total: 5, minMg: 0.025, maxMg: 2.0, step: 0.25 });
-  addGen('nd10', '노디트로핀 지나브펜 10mg/1.5mL', { mg: 0.05, total: 10, minMg: 0.05, maxMg: 4.0, step: 0.5 });
-  addGen('nd15', '노디트로핀 지나브펜 15mg/1.5mL', { mg: 0.1, total: 15, minMg: 0.1, maxMg: 8.0, step: 0.5 });
-  // 싸이젠 전자식 펜(easypod 3.0): 0.05mg 단위 (6·12·20mg 카트리지)
-  addGen('sz6', '싸이젠 6mg 카트리지(전자식 펜)', { mg: 0.05, total: 6, minMg: 0.05, maxMg: 6, step: 0.25 });
-  addGen('sz12', '싸이젠 12mg 카트리지(전자식 펜)', { mg: 0.05, total: 12, minMg: 0.05, maxMg: 12, step: 0.5 });
-  addGen('sz20', '싸이젠 20mg 카트리지(전자식 펜)', { mg: 0.05, total: 20, minMg: 0.05, maxMg: 20, step: 1 });
+  /* ════ 국내 시판 성장호르몬 (1일 1회 제제) ════
+   * 근거: 약학정보원(health.kr) 허가정보, 심평원 급여정보, 제조사 제품페이지·사용설명서, 해외 허가문서(같은 펜)
+   * inuse = 첫 사용 후 사용기한(일). 그 안에 다 못 쓰는 묶음은 선택지에서 뺌 */
 
-  // 조맥톤주 10mg(바이알 10mg/mL, 재조제 후 28일 이내 사용): 주사기로 뽑는 방식이라 매회 같은 용량. 한 바이알 = floor(10÷용량)회, 28일 한도(6일 맞고 1일 쉬면 24회)
-  PENS.zm10 = { name: '조맥톤주 10mg (바이알·주사기)', cart: 30, vial: { total: 10, conc: 10, maxInj: 24, step: 0.1, minMg: 0.2 }, keys: [] };
-  (function () {
-    var v = PENS.zm10.vial;
-    for (var D = v.minMg; D <= v.total / 3 + 1e-9; D += v.step) { D = Math.round(D * 100) / 100; PENS.zm10.keys.push(String(D)); }
-  })();
+  // ── LG화학 유트로핀 (현재 국내 제품: 유트로핀주 4IU · 에스펜 36IU · 카트리지 48IU) ──
+  // 유트로핀에스펜주 36IU/3.0mL(급여): 최소 용량 조절 단위 0.5IU(LG화학), 첫 사용 후 냉장 42일(health.kr). 1회 최대 미공개 → 1회 12IU 이하
+  addGen('es36', '유트로핀 에스펜주 36IU (급여)', { mg: 0.5 / 3, total: 12, minMg: 0.5 / 3, maxMg: 4, step: 0.5, iu: true, inuse: 42 });
+  // 유트로핀카트리지주 48IU/2.88mL + 유트로핀에코펜48(비급여): 첫 사용 후 냉장 42일(허가정보). 다이얼 최소 단위는 공개 자료 없음 →
+  // 0.1IU·0.5IU 어느 펜에서도 맞출 수 있는 0.5IU 기준으로 계산, 1회 12IU 이하. 잔량 맞춤 기능 → 카트리지 교체 회차는 남은 양 + 새 카트리지로 나눠 맞음
+  addGen('ec48', '유트로핀 카트리지 48IU · 에코펜48 (비급여, 0.5단위 기준)', { mg: 0.5 / 3, total: 16, minMg: 0.5 / 3, maxMg: 4, step: 0.5, iu: true, inuse: 42 , cart: true});
+
+  // ── 동아에스티 그로트로핀투 ──
+  // 아이펜 30IU/2.7mL(급여·일체형): 최소 0.1IU, 1회 최대 8.9IU, 첫 사용 후 냉장 28일 / 아이펜 20IU/1.8mL: 0.1IU, 냉장 21일 (health.kr·ConnectDI)
+  addGen('ip30', '동아 그로트로핀투 아이펜 30IU (급여·일체형)', { mg: 0.1 / 3, total: 10, minMg: 0.1 / 3, maxMg: 8.9 / 3, step: 0.5, iu: true, inuse: 28 });
+  addGen('ip20', '동아 그로트로핀투 아이펜 20IU (일체형)', { mg: 0.1 / 3, total: 20 / 3, minMg: 0.1 / 3, maxMg: 7 / 3, step: 0.5, iu: true, inuse: 21 });
+  // 카트리지 20IU/1.8mL(급여) · 30IU/2.7mL(비급여, 위 병원 환산표) + 그로트로핀-II Pen(전자식, 0.2IU 단위, 1회 최대 15IU). 20IU 냉장 21일
+  addGen('dc20', '동아 그로트로핀투 카트리지 20IU (급여) · 그로트로핀-II Pen', { mg: 0.2 / 3, total: 20 / 3, minMg: 0.2 / 3, maxMg: 15 / 3, step: 0.5, iu: true, inuse: 21 , cart: true});
+
+  // ── 한국화이자 지노트로핀 ── (0.15mg·0.05mg/클릭: 화이자 매뉴얼, 펜 0.1·0.2mg: 한국화이자 허가문서) 재조제 후 냉장 28일
+  addGen('gq', '지노트로핀 고퀵 36단위(12mg)', { mg: 0.15, total: 12, minMg: 0.3, maxMg: 4.5, step: 0.5, inuse: 28 });
+  addGen('gq53', '지노트로핀 고퀵 16단위(5.3mg)', { mg: 0.05, total: 5.3, minMg: 0.1, maxMg: 1.5, step: 0.25, inuse: 28 });
+  addGen('gp53', '지노트로핀주 16IU(5.3mg) 카트리지 (급여) · 지노트로핀 펜', { mg: 0.1, total: 5.3, minMg: 0.1, maxMg: 2.0, step: 0.25, inuse: 28 , cart: true});
+  addGen('gp12', '지노트로핀주 12mg 카트리지 (급여) · 지노트로핀 펜', { mg: 0.2, total: 12, minMg: 0.2, maxMg: 4.0, step: 0.5, inuse: 28 , cart: true});
+
+  // ── 노보노디스크 노디트로핀 노디플렉스주 ── (국내 급여 확인: 10mg/1.5mL) 5mg 0.025mg·최대 1.5mg / 10mg 0.05mg·최대 3.0mg / 15mg 0.075mg·최대 4.5mg, 첫 사용 후 냉장 28일 (노디플렉스 허가문서)
+  addGen('nd10', '노디트로핀 노디플렉스주 10mg/1.5mL (급여)', { mg: 0.05, total: 10, minMg: 0.05, maxMg: 3.0, step: 0.5, inuse: 28 });
+  addGen('nd5', '노디트로핀 노디플렉스주 5mg/1.5mL', { mg: 0.025, total: 5, minMg: 0.025, maxMg: 1.5, step: 0.25, inuse: 28 });
+  addGen('nd15', '노디트로핀 노디플렉스주 15mg/1.5mL', { mg: 0.075, total: 15, minMg: 0.075, maxMg: 4.5, step: 0.5, inuse: 28 });
+
+  // ── 한국머크 싸이젠 리퀴드 카트리지 ── 6mg/1.03mL(5.83mg/mL, 급여) · 12mg/1.5mL(8mg/mL) · 20mg/2.5mL. 이지포드(전자식) 또는 알루에타 펜(0.1mg 단위).
+  // 첫 주사 후 냉장 28일. 이지포드 1회 범위 6mg 0.15~4.66mg, 12·20mg 0.5~6.4mg → 두 기기 모두 맞출 수 있게 0.1mg 단위·그 범위 안으로 계산
+  addGen('sz6', '싸이젠 리퀴드 6mg (급여) · 이지포드/알루에타', { mg: 0.1, total: 6, minMg: 0.2, maxMg: 4.6, step: 0.25, inuse: 28 , cart: true});
+  addGen('sz12', '싸이젠 리퀴드 12mg · 이지포드/알루에타', { mg: 0.1, total: 12, minMg: 0.5, maxMg: 6.4, step: 0.5, inuse: 28 , cart: true});
+  addGen('sz20', '싸이젠 리퀴드 20mg · 이지포드/알루에타', { mg: 0.1, total: 20, minMg: 0.5, maxMg: 6.4, step: 1, inuse: 28 , cart: true});
+
+  // ── 싸이젠코리아 싸이트로핀에이 카트리지 (산도즈 옴니트로프 동일 제제) ── 5mg(급여)·10mg·15mg(급여)/1.5mL, 첫 주사 후 냉장 28일 (health.kr)
+  // 옴니트로프 펜 5 = 0.05mg 단위, 펜 10 = 0.1mg 단위 (옴니트로프 사용설명서), 싸이트로핀 펜 15 = 0.1mg 단위·1회 최대 5.4mg(같은 계열 15mg 펜 자료)
+  addGen('sc5', '싸이트로핀에이 카트리지 5mg (급여) · 옴니트로프 펜 5', { mg: 0.05, total: 5, minMg: 0.05, maxMg: 1.7, step: 0.25, inuse: 28 , cart: true});
+  addGen('sc10', '싸이트로핀에이 카트리지 10mg · 옴니트로프 펜 10', { mg: 0.1, total: 10, minMg: 0.1, maxMg: 3.4, step: 0.5, inuse: 28 , cart: true});
+  addGen('sc15', '싸이트로핀에이 카트리지 15mg (급여) · 싸이트로핀 펜 15', { mg: 0.1, total: 15, minMg: 0.1, maxMg: 5.4, step: 0.5, inuse: 28 , cart: true});
+
+  // ── 바이알(주사기로 뽑는 제품) ── 매회 같은 용량, 한 바이알 = min(바이알 용량 ÷ 1회 용량, 사용기한 안의 주사 횟수)회, 남은 양은 폐기
+  function addVial(id, name, v) {
+    // v = { iu: 단위 기준 여부, total: 바이알 용량(단위 또는 mg), conc: 1mL당(단위 또는 mg, 모르면 null), days: 첫 사용 후 사용기한, step, min, max, liquid: 액상(재조제 불필요) }
+    v.maxInj = perPenMax(v.days);
+    PENS[id] = { name: name, cart: v.iu ? v.total : v.total * 3, vial: v, keys: [] };
+    var st = v.stepMl && v.conc ? v.conc * v.stepMl : v.step;   // 주사기 눈금(mL)에 딱 맞는 용량만
+    for (var i = Math.ceil(v.min / st - 1e-9); i * st <= Math.min(v.max, v.total) + 1e-9; i++) PENS[id].keys.push(String(Math.round(i * st * 1000) / 1000));
+  }
+  // 유트로핀주 4IU(급여): 동결건조 + 첨부용제 1mL(4IU/mL), "용해 후 가능한 한 빨리 사용" → 매회 새 바이알 1개 (health.kr·LG화학)
+  addVial('eu4', '유트로핀주 4IU 바이알 (급여·매회 새 바이알)', { iu: true, total: 4, conc: 4, days: 1, stepMl: 0.05, min: 0.4, max: 4 });
+  // (바이알 용량 선택지는 주사기 눈금 0.01mL(유트로핀주는 0.05mL)에 딱 맞는 값만 — 예: 8IU/mL이면 0.08단위 간격)
+  // 그로트로핀투주사액 바이알(액상 8IU/mL): 4IU/0.5mL 개봉 후 냉장 2일 · 12IU/1.5mL(급여) 14일 · 16IU/2mL 20일 (health.kr)
+  addVial('gv12', '그로트로핀투주사액 12IU/1.5mL 바이알 (급여)', { iu: true, liquid: true, total: 12, conc: 8, days: 14, stepMl: 0.01, min: 0.4, max: 6 });
+  addVial('gv16', '그로트로핀투주사액 16IU/2mL 바이알', { iu: true, liquid: true, total: 16, conc: 8, days: 20, stepMl: 0.01, min: 0.4, max: 8 });
+  addVial('gv4', '그로트로핀투주사액 4IU/0.5mL 바이알', { iu: true, liquid: true, total: 4, conc: 8, days: 2, stepMl: 0.01, min: 0.4, max: 4 });
+  // 조맥톤주 10mg(바이알+용제 1mL → 10mg/mL), 재조제 후 냉장 28일 (health.kr)
+  addVial('zm10', '조맥톤주 10mg (바이알·주사기)', { total: 10, conc: 10, days: 28, stepMl: 0.01, min: 0.2, max: 10 / 3 });
+  // 조맥톤 12.96IU(급여, 바늘 없는 조맥젯 2 비전으로 투여), 재조제 후 냉장 14일. 국내 용제량 자료 없음 → mL 대신 단위로만 표시
+  addVial('zm13', '조맥톤 12.96IU (급여·조맥젯)', { iu: true, total: 12.96, conc: null, days: 14, step: 0.1, min: 0.5, max: 6.4 });
 
   function doseLabel(pen, k) {
-    if (pen.vial) return k + ' mg';
+    if (pen.vial) {
+      var v = pen.vial, D = parseFloat(k), Nv = Math.min(Math.floor(v.total / D + 1e-9), v.maxInj), ml = v.conc ? Math.round(D / v.conc * 1000) / 1000 : null;
+      return D + (v.iu ? t('unit') : 'mg') + (ml != null ? ' (' + ml + 'mL)' : '') + ' · ' + Nv + '×';
+    }
     var g = pen.gen;
     if (!g) return k + ' ' + t('unit');
     var q = genSeq(g, k), N = q.N, base = q.base, extra = q.extra;
@@ -4810,8 +4854,8 @@ function jrdGoBack(){
     if (p.vial) {
       var v = p.vial; META[id] = {};
       p.keys.forEach(function (k) {
-        var D = parseFloat(k), N = Math.min(Math.floor(v.total / D + 1e-9), v.maxInj), arr = [], meta = [];
-        for (var i = 0; i < N; i++) { arr.push([Math.round(D * 3 * 1000) / 1000]); meta.push({ c: null, mg: D, ml: Math.round(D / v.conc * 1000) / 1000 }); }
+        var D = parseFloat(k), N = Math.min(Math.floor(v.total / D + 1e-9), v.maxInj), arr = [], meta = [], iu = v.iu ? D : Math.round(D * 3 * 1000) / 1000;
+        for (var i = 0; i < N; i++) { arr.push([iu]); meta.push({ c: null, mg: v.iu ? Math.round(D / 3 * 1000) / 1000 : D, iu: iu, ml: v.conc ? Math.round(D / v.conc * 1000) / 1000 : null, vt: v.iu ? (v.conc ? 'iu' : 'iu0') : 'mg', liq: !!v.liquid }); }
         TABLES[id][k] = arr; META[id][k] = meta;
       });
       return;
@@ -4824,7 +4868,7 @@ function jrdGoBack(){
         var room = g.clicks - (used % g.clicks), segs;
         if (c > room && room > 0 && used % g.clicks !== 0) segs = [rd(room * g.unit), rd((c - room) * g.unit)]; else segs = [rd(c * g.unit)];
         used += c; arr.push(segs);
-        meta.push({ c: c, mg: rd(c * g.mg), iu: rd(c * g.unit), d: !!g.iu });
+        meta.push({ c: c, mg: rd(c * g.mg), iu: rd(c * g.unit), d: !!g.iu, ct: !!g.cart });
       });
       TABLES[id][k] = arr; META[id][k] = meta;
     });
@@ -4854,7 +4898,26 @@ function jrdGoBack(){
     l = String(l).split('-')[0].toLowerCase() === 'zh' ? 'zh' : String(l).toLowerCase();
     return TX[l] ? l : (l === 'ko' ? 'ko' : 'en');
   }
+  // 회사(제조·판매사) → 제품 2단계 선택용
+  var COMPANIES = [
+    { id: 'dong', name: '동아에스티', re: /^(g2|ip\d+|dc\d+|gv\d+)$/ },
+    { id: 'lg', name: 'LG화학', re: /^(es\d+|ec\d+|eu\d+)$/ },
+    { id: 'pfizer', name: '한국화이자', re: /^(gq\d*|gp\d+)$/ },
+    { id: 'novo', name: '노보노디스크', re: /^nd\d+$/ },
+    { id: 'merck', name: '한국머크 (싸이젠)', re: /^sz\d+$/ },
+    { id: 'scigen', name: '싸이젠코리아 (싸이트로핀)', re: /^sc\d+$/ },
+    { id: 'ferring', name: '페링 (조맥톤)', re: /^zm\d+$/ }
+  ];
+  function coOf(pid) { for (var i = 0; i < COMPANIES.length; i++) if (COMPANIES[i].re.test(pid)) return COMPANIES[i]; return COMPANIES[0]; }
+  function pensOfCo(co) { return Object.keys(PENS).filter(function (id) { return coOf(id).id === co.id; }); }
   var GT = {
+    company: { ko: '회사', en: 'Company', zh: '制药公司', 'zh-TW': '製藥公司', ja: 'メーカー', vi: 'Hãng sản xuất', th: 'บริษัท', id: 'Perusahaan', es: 'Fabricante', ar: 'الشركة', mn: 'Компани' },
+    splitpen: { ko: '펜 교체: 남은 {a}단위를 맞고 새 펜에서 {b}단위 이어서', en: 'Pen change: inject the remaining {a} units, then {b} units from the new pen', zh: '更换笔：先打完剩余{a}单位，再用新笔接着打{b}单位', 'zh-TW': '更換筆：先打完剩餘{a}單位，再用新筆接著打{b}單位', ja: 'ペン交換：残り{a}単位を打ち、新しいペンで{b}単位を続けて', vi: 'Đổi bút: tiêm nốt {a} đơn vị còn lại, rồi {b} đơn vị bằng bút mới', th: 'เปลี่ยนปากกา: ฉีดส่วนที่เหลือ {a} หน่วย แล้วต่อด้วย {b} หน่วยจากปากกาใหม่', id: 'Ganti pena: suntikkan sisa {a} unit, lalu {b} unit dari pena baru', es: 'Cambio de pluma: ponga las {a} unidades restantes y luego {b} de la pluma nueva', ar: 'تغيير القلم: أعطِ الـ{a} وحدة المتبقية ثم {b} وحدة من القلم الجديد', mn: 'Үзэг солих: үлдсэн {a} нэгжийг тарьж, шинэ үзгээс {b} нэгжийг үргэлжлүүлнэ' },
+    single: { ko: '매번 새 바이알을 쓰고 남은 양은 버려요', en: 'Use a new vial every time and discard what is left', zh: '每次使用新药瓶，剩余药液丢弃', 'zh-TW': '每次使用新藥瓶，剩餘藥液丟棄', ja: '毎回新しいバイアルを使い、残りは捨てます', vi: 'Mỗi lần dùng một lọ mới và bỏ phần còn lại', th: 'ใช้ขวดใหม่ทุกครั้งและทิ้งส่วนที่เหลือ', id: 'Gunakan vial baru setiap kali dan buang sisanya', es: 'Use un vial nuevo cada vez y deseche lo que sobre', ar: 'استخدم قارورة جديدة في كل مرة وتخلّص من الباقي', mn: 'Тарилга бүрт шинэ сав хэрэглэж, үлдэгдлийг хаяна' },
+    drawiu: { ko: '주사기로 {ml}mL 뽑기 ({iu}단위)', en: 'Draw {ml} mL with a syringe ({iu} units)', zh: '用注射器抽取{ml}mL（{iu}单位）', 'zh-TW': '用注射器抽取{ml}mL（{iu}單位）', ja: 'シリンジで{ml}mLを吸う（{iu}単位）', vi: 'Rút {ml} mL bằng bơm tiêm ({iu} đơn vị)', th: 'ดูดยา {ml} มล. ด้วยกระบอกฉีด ({iu} หน่วย)', id: 'Ambil {ml} mL dengan spuit ({iu} unit)', es: 'Cargue {ml} mL con la jeringa ({iu} unidades)', ar: 'اسحب {ml} مل بالمحقنة ({iu} وحدة)', mn: 'Тариураар {ml} мл татах ({iu} нэгж)' },
+    doseiu: { ko: '{iu}단위 투여', en: 'Give {iu} units', zh: '注射{iu}单位', 'zh-TW': '注射{iu}單位', ja: '{iu}単位を投与', vi: 'Tiêm {iu} đơn vị', th: 'ฉีด {iu} หน่วย', id: 'Suntik {iu} unit', es: 'Administrar {iu} unidades', ar: 'إعطاء {iu} وحدة', mn: '{iu} нэгж тарих' },
+    newvial2: { ko: '새 바이알 시작', en: 'Start a new vial', zh: '开始使用新药瓶', 'zh-TW': '開始使用新藥瓶', ja: '新しいバイアルを開始', vi: 'Bắt đầu lọ mới', th: 'เริ่มขวดใหม่', id: 'Mulai vial baru', es: 'Empezar vial nuevo', ar: 'بدء قارورة جديدة', mn: 'Шинэ сав эхлүүлэх' },
+    inuse: { ko: '펜·카트리지·바이알 1개를 첫 사용 후 {d}일 안에 다 쓰도록 맞췄어요', en: 'Planned so each pen/cartridge/vial is used up within {d} days of first use', zh: '已按每支笔/药芯/药瓶在首次使用后{d}天内用完来安排', 'zh-TW': '已依每支筆/藥匣/藥瓶在首次使用後{d}天內用完來安排', ja: 'ペン・カートリッジ・バイアル1本を初回使用から{d}日以内に使い切るよう計算しています', vi: 'Đã tính để mỗi bút/ống/lọ được dùng hết trong {d} ngày kể từ lần dùng đầu', th: 'คำนวณให้ใช้ปากกา/คาร์ทริดจ์/ขวด 1 อันหมดภายใน {d} วันหลังใช้ครั้งแรก', id: 'Direncanakan agar tiap pena/kartrid/vial habis dalam {d} hari sejak pertama dipakai', es: 'Calculado para que cada pluma/cartucho/vial se termine en {d} días desde el primer uso', ar: 'تم الحساب بحيث يُستهلك كل قلم/خرطوشة/قارورة خلال {d} يومًا من أول استخدام', mn: 'Үзэг/картридж/сав бүрийг анх хэрэглэснээс хойш {d} хоногт дуусахаар тооцсон' },
     pens2: { ko: '펜2개', en: '2 pens', zh: '2支笔', 'zh-TW': '2支筆', ja: 'ペン2本', vi: '2 bút', th: '2 ด้าม', id: '2 pena', es: '2 plumas', ar: 'قلمان', mn: '2 үзэг' },
     avg: { ko: '평균', en: 'avg', zh: '平均', 'zh-TW': '平均', ja: '平均', vi: 'TB', th: 'เฉลี่ย', id: 'rata-rata', es: 'media', ar: 'المتوسط', mn: 'дундаж' },
     makeup: { ko: '이번 주만 휴약일에 주사 (다음 주부터 원래 휴약일로)', en: 'This week only: injection on the usual rest day (back to normal next week)', zh: '仅本周：在原休药日注射（下周起恢复）', 'zh-TW': '僅本週：在原休藥日注射（下週起恢復）', ja: '今週だけ休薬日に注射（来週から元の休薬日に戻ります）', vi: 'Chỉ tuần này: tiêm vào ngày nghỉ thường lệ (tuần sau trở lại bình thường)', th: 'เฉพาะสัปดาห์นี้: ฉีดในวันพักตามปกติ (สัปดาห์หน้ากลับเป็นปกติ)', id: 'Hanya minggu ini: suntik di hari libur biasa (minggu depan kembali normal)', es: 'Solo esta semana: inyección en el día de descanso habitual (la próxima semana vuelve a lo normal)', ar: 'هذا الأسبوع فقط: حقنة في يوم الراحة المعتاد (يعود الجدول الأسبوع القادم)', mn: 'Зөвхөн энэ долоо хоногт: ердийн амрах өдөр тарина (дараа долоо хоногоос хэвийн)' },
@@ -4897,7 +4960,7 @@ function jrdGoBack(){
       else if (isRest && !(byDow && carry)) { map[d] = { t: 'rest' }; streak = 0; carry = 0; }
       else {
         var segs = seq[k - 1], before = sum(seq.slice(0, k - 1).map(sum));
-        var mt = (META[plan.pen] || {})[plan.dose]; map[d] = { t: 'inj', mg: mt ? mt[k - 1].mg : null, iu: mt ? mt[k - 1].iu : null, dd: mt ? !!mt[k - 1].d : false, clicks: mt ? mt[k - 1].c : null, ml: mt ? (mt[k - 1].ml != null ? mt[k - 1].ml : null) : null, k: k, n: N, set: setNo, segs: segs, dose: r1(sum(segs)), split: segs.length > 1, cart: Math.floor(before / cartSz + 1e-9) + 1, newCart: k === 1 || (before > 0 && Math.abs(before / cartSz - Math.round(before / cartSz)) < 1e-6) };
+        var mt = (META[plan.pen] || {})[plan.dose]; map[d] = { t: 'inj', mg: mt ? mt[k - 1].mg : null, iu: mt ? mt[k - 1].iu : null, dd: mt ? !!mt[k - 1].d : false, vt: mt ? (mt[k - 1].vt || null) : null, ct: mt ? !!mt[k - 1].ct : (penOf(plan.pen).spec ? true : false), liq: mt ? !!mt[k - 1].liq : false, clicks: mt ? mt[k - 1].c : null, ml: mt ? (mt[k - 1].ml != null ? mt[k - 1].ml : null) : null, k: k, n: N, set: setNo, segs: segs, dose: r1(sum(segs)), split: segs.length > 1, cart: Math.floor(before / cartSz + 1e-9) + 1, newCart: k === 1 || (before > 0 && Math.abs(before / cartSz - Math.round(before / cartSz)) < 1e-6) };
         if (isRest) { map[d].mk = true; carry = 0; }
         streak++; k++;
         if (k > N) { k = 1; setNo++; }
@@ -4912,7 +4975,7 @@ function jrdGoBack(){
   function chipFor(info, date) {
     var past = date < todayStr();
     if (info.t === 'inj') {
-      var d = info.mg != null ? info.mg + 'mg' : (info.split ? info.segs.join('+') : info.dose);
+      var d = info.split ? info.segs.join('+') : ((info.dd || info.vt === 'iu' || info.vt === 'iu0' || info.mg == null) ? info.dose : info.mg + 'mg');
       return '<div class="gh-chip gh-inj' + (past ? ' gh-past' : '') + (date === todayStr() ? ' gh-today' : '') + '" title="' + esc(dayText(info)) + '">' + (info.mk ? '↩' : '💉') + info.k + '/' + info.n + '<br><b>' + d + '</b></div>';
     }
     if (info.t === 'rest') return '<div class="gh-chip gh-rest">' + esc(t('c_rest')) + '</div>';
@@ -4920,13 +4983,21 @@ function jrdGoBack(){
     return '';
   }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function splitText(info) { return (info.ct || info.mg == null) ? t('split', { a: info.segs[0], b: info.segs[1] }) : gt('splitpen', { a: info.segs[0], b: info.segs[1] }); }
+  function dialText(info) {   // 그날 펜·주사기에 맞출 값
+    if (info.vt === 'iu') return gt('drawiu', { ml: info.ml, iu: info.iu });
+    if (info.vt === 'iu0') return gt('doseiu', { iu: info.iu });
+    if (info.mg == null || info.split) return '';
+    if (info.ml != null) return t('draw', { ml: info.ml, mg: info.mg });
+    return info.dd ? gt('dialiu', { iu: info.iu }) : t('dial', { mg: info.mg, c: info.clicks });
+  }
   function dayText(info) {
     if (info.t !== 'inj') return '';
     var s = t('day_inj', { set: info.set, k: info.k, n: info.n, dose: info.dose });
     if (info.mk) s += ' / ' + gt('makeup');
-    if (info.split) s += ' / ' + t('split', { a: info.segs[0], b: info.segs[1] });
-    else if (info.newCart) s += ' / ' + t(info.ml != null ? 'newvial' : (info.mg != null ? 'newpen' : 'newcart'));
-    if (info.mg != null && !info.split) s += ' / ' + (info.ml != null ? t('draw', { ml: info.ml, mg: info.mg }) : (info.dd ? gt('dialiu', { iu: info.iu }) : t('dial', { mg: info.mg, c: info.clicks })));
+    if (info.split) s += ' / ' + splitText(info);
+    else if (info.newCart) s += ' / ' + (info.vt ? (info.liq ? gt('newvial2') : t('newvial')) : t(info.ct || info.mg == null ? 'newcart' : 'newpen'));
+    var dt = dialText(info); if (dt) s += ' / ' + dt;
     return s;
   }
 
@@ -4987,7 +5058,7 @@ function jrdGoBack(){
     var h = '<h3>' + esc(t('title')) + '</h3><div class="gh-sub">' + esc(subTxt) + '</div>';
     if (plan) {
       var ti = b.map[today], line;
-      if (ti && ti.t === 'inj') line = '💉 ' + t('today_inj', { k: ti.k, n: ti.n, dose: ti.split ? ti.segs.join('+') + '=' + ti.dose : ti.dose }) + (ti.split ? '<div style="font-size:11px;font-weight:600;color:#B24E36;margin-top:3px">' + esc(t('split', { a: ti.segs[0], b: ti.segs[1] })) + '</div>' : (ti.newCart ? '<div style="font-size:11px;font-weight:600;margin-top:3px">' + esc(t(ti.ml != null ? 'newvial' : (ti.mg != null ? 'newpen' : 'newcart'))) + '</div>' : '')) + (ti.mg != null ? '<div style="font-size:12px;font-weight:700;color:#1B3A4B;margin-top:3px">🔘 ' + esc(ti.ml != null ? t('draw', { ml: ti.ml, mg: ti.mg }) : t('dial', { mg: ti.mg, c: ti.clicks })) + '</div>' : '');
+      if (ti && ti.t === 'inj') line = '💉 ' + t('today_inj', { k: ti.k, n: ti.n, dose: ti.split ? ti.segs.join('+') + '=' + ti.dose : ti.dose }) + (ti.split ? '<div style="font-size:11px;font-weight:600;color:#B24E36;margin-top:3px">' + esc(splitText(ti) || t('split', { a: ti.segs[0], b: ti.segs[1] })) + '</div>' : (ti.newCart ? '<div style="font-size:11px;font-weight:600;margin-top:3px">' + esc(ti.vt ? (ti.liq ? gt('newvial2') : t('newvial')) : t(ti.ct || ti.mg == null ? 'newcart' : 'newpen')) + '</div>' : '')) + (dialText(ti) ? '<div style="font-size:12px;font-weight:700;color:#1B3A4B;margin-top:3px">🔘 ' + esc(dialText(ti)) + '</div>' : '');
       else if (ti && (ti.t === 'rest' || ti.t === 'skip')) line = '😴 ' + t('today_rest');
       else line = t('today_out');
       h += '<div class="gh-today-box">' + line + '</div>';
@@ -5011,7 +5082,9 @@ function jrdGoBack(){
     if (pen.keys.indexOf(p.dose) < 0 || (plan && plan.pen !== penId && plan.pen !== undefined && penId !== (plan.pen || 'g2'))) p = Object.assign({}, p, { dose: pen.keys[0], k0: 1 });
     var N = tableOf(penId, p.dose).length;
     h += '<details id="ghForm"' + (plan ? '' : ' open') + ' style="margin-top:8px"><summary style="cursor:pointer;font-weight:700;font-size:12px;color:#43555F">⚙️ ' + esc(plan ? t('edit') : t('make')) + '</summary>';
-    if (Object.keys(PENS).length > 1) h += '<div class="gh-row"><label>' + esc(t('f_pen')) + '<select id="ghPen">' + Object.keys(PENS).map(function (id) { return '<option value="' + id + '"' + (id === penId ? ' selected' : '') + '>' + esc(PENS[id].name) + '</option>'; }).join('') + '</select></label></div>';
+    var curCo = coOf(penId);
+    h += '<div class="gh-row"><label>' + esc(gt('company')) + '<select id="ghCo">' + COMPANIES.filter(function (c) { return pensOfCo(c).length; }).map(function (c) { return '<option value="' + c.id + '"' + (c.id === curCo.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div>';
+    if (Object.keys(PENS).length > 1) h += '<div class="gh-row"><label>' + esc(t('f_pen')) + '<select id="ghPen">' + pensOfCo(curCo).map(function (id) { return '<option value="' + id + '"' + (id === penId ? ' selected' : '') + '>' + esc(PENS[id].name) + '</option>'; }).join('') + '</select></label></div>';
     h += '<div class="gh-row"><label>' + esc(t('f_dose')) + '<select id="ghDose">' + pen.keys.map(function (k) { return '<option value="' + k + '"' + (k === p.dose ? ' selected' : '') + '>' + esc(doseLabel(pen, k)) + '</option>'; }).join('') + '</select></label>';
     h += '<label>' + esc(t('f_start')) + '<input type="date" id="ghStart" value="' + p.start + '"></label></div>';
     h += '<div class="gh-row"><label>' + esc(t('f_k')) + '<select id="ghK">' + Array.apply(null, Array(N)).map(function (_, i) { return '<option value="' + (i + 1) + '"' + ((+p.k0 || 1) === i + 1 ? ' selected' : '') + '>' + (i + 1) + '/' + N + '</option>'; }).join('') + '</select></label>';
@@ -5028,7 +5101,8 @@ function jrdGoBack(){
   }
   function hint() {
     var el = document.getElementById('ghHint'), sel = document.getElementById('ghDose'); if (!el || !sel) return;
-    var pe = document.getElementById('ghPen'), seq = tableOf(pe ? pe.value : 'g2', sel.value); el.textContent = t('hint_set', { n: seq.length, t: r1(sum(seq.map(sum))) });
+    var pe = document.getElementById('ghPen'), pid = pe ? pe.value : 'g2', seq = tableOf(pid, sel.value), pp = penOf(pid), dd = pp.gen ? pp.gen.inuse : (pp.vial ? pp.vial.days : pp.inuse);
+    el.textContent = (pp.vial && pp.vial.maxInj === 1) ? gt('single') : t('hint_set', { n: seq.length, t: r1(sum(seq.map(sum))) }) + (dd ? ' · ' + gt('inuse', { d: dd }) : '');
   }
 
   function all() { panel(); decorate(); }
@@ -5087,6 +5161,11 @@ function jrdGoBack(){
     }
   });
   document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'ghCo') {
+      var cc = COMPANIES.filter(function (c) { return c.id === e.target.value; })[0], lst = cc ? pensOfCo(cc) : [];
+      if (lst.length) { formPen = lst[0]; panel(); var fo2 = document.getElementById('ghForm'); if (fo2) fo2.open = true; }
+      return;
+    }
     if (e.target && e.target.id === 'ghPen') { formPen = e.target.value; var fo = document.getElementById('ghForm'); panel(); fo = document.getElementById('ghForm'); if (fo) fo.open = true; return; }
     if (e.target && e.target.id === 'ghDose') {
       hint();
