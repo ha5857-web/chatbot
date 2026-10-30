@@ -4722,20 +4722,28 @@ function jrdGoBack(){
    * ② gen 방식: mg 다이얼 펜 — 펜 1개를 남김없이 쓰도록 전체 클릭 수를 N회(=총단위÷설정용량 반올림)에 고르게 나눔(앞쪽이 1클릭 적게)
    *    gen = { mg: 1클릭당 mg, total: 총 mg, minMg/maxMg: 1회 최소·최대 mg, step: 설정용량 간격(단위) }, 1mg = 3단위 */
   var PENS = {
-    g2: { name: '동아 그로트로핀II 펜', cart: 30, keys: ['2.6', '2.8', '3', '3.4', '3.8', '4.2', '4.6', '5', '5.4', '6', '6.6', '7.4'], spec: SPEC }
+    g2: { name: '동아 그로트로핀투 카트리지 30IU · 그로트로핀-II Pen (비급여)', cart: 30, keys: ['2.6', '2.8', '3', '3.4', '3.8', '4.2', '4.6', '5', '5.4', '6', '6.6', '7.4'], spec: SPEC }
   };
   function addGen(id, name, g) {
     g.unit = g.mg * 3; g.clicks = Math.round(g.total / g.mg); g.minC = Math.round(g.minMg / g.mg); g.maxC = Math.round(g.maxMg / g.mg);
     PENS[id] = { name: name, cart: g.total * 3, gen: g, keys: [] };
-    var tot = g.clicks * g.unit;
+    var tot = g.clicks * g.unit, seenN = {};
     for (var T = g.step; T <= tot; T += g.step) {
       T = Math.round(T * 1000) / 1000;
       var N = Math.round(tot / T); if (N < 3 || N > 40) continue;
       var base = Math.floor(g.clicks / N), extra = g.clicks - base * N;
       if (base < g.minC || base + (extra ? 1 : 0) > g.maxC) continue;
+      if (seenN[N]) continue; seenN[N] = 1;
       PENS[id].keys.push(String(T));
     }
   }
+  // ── 동아에스티 (식약처·심평원 정보 기준) ──
+  // 그로트로핀투주사액 아이펜 30IU/2.7mL (급여, 일체형): 0.1IU 단위 조절, 1회 최대 8.9IU
+  addGen('ip30', '동아 그로트로핀투 아이펜 30IU (급여·일체형)', { mg: 0.1 / 3, total: 10, minMg: 0.1 / 3, maxMg: 8.9 / 3, step: 0.5, iu: true });
+  // 그로트로핀투주사액 아이펜 20IU/1.8mL: 0.1IU 단위 조절 (1회 최대는 자료 미확인 → 한 세트 3회 이상으로 제한)
+  addGen('ip20', '동아 그로트로핀투 아이펜 20IU (일체형)', { mg: 0.1 / 3, total: 20 / 3, minMg: 0.1 / 3, maxMg: 20 / 9, step: 0.5, iu: true });
+  // 그로트로핀-II Pen(전자식)용 카트리지 20IU: 0.2IU 단위, 1회 최대 15IU (30IU 카트리지는 병원 환산표 사용)
+  addGen('dc20', '동아 그로트로핀투 카트리지 20IU · 그로트로핀-II Pen', { mg: 0.2 / 3, total: 20 / 3, minMg: 0.2 / 3, maxMg: 20 / 9, step: 0.5, iu: true });
   // 지노트로핀 고퀵 12mg: 0.15mg/클릭, 1회 0.3~4.5mg (화이자 매뉴얼)
   addGen('gq', '지노트로핀 고퀵 36단위(12mg)', { mg: 0.15, total: 12, minMg: 0.3, maxMg: 4.5, step: 0.5 });
   // 지노트로핀 고퀵 5.3mg(16단위): 0.05mg/클릭, 1회 0.1~1.5mg (화이자 매뉴얼)
@@ -4759,6 +4767,16 @@ function jrdGoBack(){
     for (var D = v.minMg; D <= v.total / 3 + 1e-9; D += v.step) { D = Math.round(D * 100) / 100; PENS.zm10.keys.push(String(D)); }
   })();
 
+  function doseLabel(pen, k) {
+    if (pen.vial) return k + ' mg';
+    var g = pen.gen;
+    if (!g) return k + ' ' + t('unit');
+    var N = Math.round(g.clicks * g.unit / +k), base = Math.floor(g.clicks / N), extra = g.clicks - base * N;
+    var r = function (x) { return String(Math.round(x * 1000) / 1000); };
+    if (g.iu) { var l2 = base * g.unit, h2 = (base + (extra ? 1 : 0)) * g.unit; return (extra ? r(l2) + '~' + r(h2) : r(l2)) + ' ' + t('unit') + ' · ' + N + '×'; }
+    var lo = base * g.mg, hi = (base + (extra ? 1 : 0)) * g.mg;
+    return (extra ? r(lo) + '~' + r(hi) : r(lo)) + ' mg (' + (extra ? r(lo * 3).replace(/(\.\d\d)\d+/, '$1') + '~' + r(hi * 3).replace(/(\.\d\d)\d+/, '$1') : r(lo * 3)) + ' ' + t('unit') + ') · ' + N + '×';
+  }
   function parseSpec(str) {
     var out = [];
     str.split(',').forEach(function (tok) {
@@ -4787,7 +4805,7 @@ function jrdGoBack(){
     var g = p.gen; META[id] = {};
     p.keys.forEach(function (k) {
       var T = parseFloat(k), N = Math.round((g.clicks * g.unit) / T), base = Math.floor(g.clicks / N), extra = g.clicks - base * N, arr = [], meta = [];
-      for (var i = 0; i < N; i++) { var c = base + (i >= N - extra ? 1 : 0); arr.push([Math.round(c * g.unit * 1000) / 1000]); meta.push({ c: c, mg: Math.round(c * g.mg * 1000) / 1000 }); }
+      for (var i = 0; i < N; i++) { var c = base + (i >= N - extra ? 1 : 0); arr.push([Math.round(c * g.unit * 1000) / 1000]); meta.push({ c: c, mg: Math.round(c * g.mg * 1000) / 1000, iu: Math.round(c * g.unit * 1000) / 1000, d: !!g.iu }); }
       TABLES[id][k] = arr; META[id][k] = meta;
     });
   });
@@ -4816,6 +4834,11 @@ function jrdGoBack(){
     l = String(l).split('-')[0].toLowerCase() === 'zh' ? 'zh' : String(l).toLowerCase();
     return TX[l] ? l : (l === 'ko' ? 'ko' : 'en');
   }
+  var GT = {
+    dialiu: { ko: '펜 설정: {iu}단위', en: 'Pen setting: {iu} units', zh: '笔设定：{iu}单位', 'zh-TW': '筆設定：{iu}單位', ja: 'ペン設定：{iu}単位', vi: 'Cài đặt bút: {iu} đơn vị', th: 'ตั้งปากกา: {iu} หน่วย', id: 'Atur pena: {iu} unit', es: 'Ajuste de la pluma: {iu} unidades', ar: 'ضبط القلم: {iu} وحدة', mn: 'Үзгийн тохиргоо: {iu} нэгж' },
+    gnote: { ko: '제품 설명서의 다이얼 단위에 맞춰 펜(카트리지) 한 대를 남김없이 쓰도록 나눈 계산값입니다. 용량과 외래일은 담당 의사의 안내를 따라 주세요.', en: "Calculated from the product's dial increments so that one pen/cartridge is used up evenly. Follow your doctor's instructions for dose and visit date.", zh: '按产品说明书的刻度单位计算，使一支笔/药芯恰好用完。剂量和门诊日请遵医嘱。', 'zh-TW': '依產品說明書的刻度單位計算，使一支筆/藥匣剛好用完。劑量與門診日請依醫師指示。', ja: '製品説明書のダイヤル単位に基づき、ペン（カートリッジ）1本を使い切るように分けた計算値です。用量と外来日は主治医の指示に従ってください。', vi: 'Tính theo bước chỉnh liều của sản phẩm để dùng hết một bút/ống thuốc. Hãy làm theo hướng dẫn của bác sĩ về liều và ngày tái khám.', th: 'คำนวณตามหน่วยปรับของผลิตภัณฑ์ เพื่อใช้ปากกา/คาร์ทริดจ์ 1 อันให้หมดพอดี โปรดทำตามคำแนะนำของแพทย์เรื่องขนาดยาและวันนัด', id: 'Dihitung dari satuan pengaturan produk agar satu pena/kartrid habis terpakai. Ikuti arahan dokter untuk dosis dan tanggal kontrol.', es: 'Calculado según los incrementos del dial del producto para agotar una pluma/cartucho. Siga las indicaciones del médico sobre dosis y fecha de consulta.', ar: 'محسوب وفق وحدات ضبط المنتج بحيث يُستهلك قلم/خرطوشة واحدة بالكامل. اتبع تعليمات الطبيب بشأن الجرعة وموعد المراجعة.', mn: 'Бүтээгдэхүүний тохируулах нэгжид тулгуурлан нэг үзэг/картриджийг дуустал хуваасан тооцоо. Тун, үзлэгийн өдрийг эмчийнхээ зааврын дагуу авна уу.' }
+  };
+  function gt(k, v) { var d = GT[k] || {}, s = d[lang()] || d.en || d.ko || k; if (v) Object.keys(v).forEach(function (x) { s = s.split('{' + x + '}').join(v[x]); }); return s; }
   function t(key, v) {
     var s = (TX[lang()] || TX.ko)[key];
     if (s == null) s = TX.ko[key] || key;
@@ -4848,7 +4871,7 @@ function jrdGoBack(){
       else if (streak >= run) { map[d] = { t: 'rest' }; streak = 0; }
       else {
         var segs = seq[k - 1], before = sum(seq.slice(0, k - 1).map(sum));
-        var mt = (META[plan.pen] || {})[plan.dose]; map[d] = { t: 'inj', mg: mt ? mt[k - 1].mg : null, clicks: mt ? mt[k - 1].c : null, ml: mt ? (mt[k - 1].ml != null ? mt[k - 1].ml : null) : null, k: k, n: N, set: setNo, segs: segs, dose: r1(sum(segs)), split: segs.length > 1, cart: Math.floor(before / cartSz + 1e-9) + 1, newCart: k === 1 };
+        var mt = (META[plan.pen] || {})[plan.dose]; map[d] = { t: 'inj', mg: mt ? mt[k - 1].mg : null, iu: mt ? mt[k - 1].iu : null, dd: mt ? !!mt[k - 1].d : false, clicks: mt ? mt[k - 1].c : null, ml: mt ? (mt[k - 1].ml != null ? mt[k - 1].ml : null) : null, k: k, n: N, set: setNo, segs: segs, dose: r1(sum(segs)), split: segs.length > 1, cart: Math.floor(before / cartSz + 1e-9) + 1, newCart: k === 1 };
         streak++; k++;
         if (k > N) { k = 1; setNo++; }
       }
@@ -4875,7 +4898,7 @@ function jrdGoBack(){
     var s = t('day_inj', { set: info.set, k: info.k, n: info.n, dose: info.dose });
     if (info.split) s += ' / ' + t('split', { a: info.segs[0], b: info.segs[1] });
     else if (info.newCart) s += ' / ' + t(info.ml != null ? 'newvial' : (info.mg != null ? 'newpen' : 'newcart'));
-    if (info.mg != null) s += ' / ' + (info.ml != null ? t('draw', { ml: info.ml, mg: info.mg }) : t('dial', { mg: info.mg, c: info.clicks }));
+    if (info.mg != null) s += ' / ' + (info.ml != null ? t('draw', { ml: info.ml, mg: info.mg }) : (info.dd ? gt('dialiu', { iu: info.iu }) : t('dial', { mg: info.mg, c: info.clicks })));
     return s;
   }
 
@@ -4961,14 +4984,14 @@ function jrdGoBack(){
     var N = tableOf(penId, p.dose).length;
     h += '<details id="ghForm"' + (plan ? '' : ' open') + ' style="margin-top:8px"><summary style="cursor:pointer;font-weight:700;font-size:12px;color:#43555F">⚙️ ' + esc(plan ? t('edit') : t('make')) + '</summary>';
     if (Object.keys(PENS).length > 1) h += '<div class="gh-row"><label>' + esc(t('f_pen')) + '<select id="ghPen">' + Object.keys(PENS).map(function (id) { return '<option value="' + id + '"' + (id === penId ? ' selected' : '') + '>' + esc(PENS[id].name) + '</option>'; }).join('') + '</select></label></div>';
-    h += '<div class="gh-row"><label>' + esc(t('f_dose')) + '<select id="ghDose">' + pen.keys.map(function (k) { return '<option value="' + k + '"' + (k === p.dose ? ' selected' : '') + '>' + k + ' ' + esc(pen.vial ? 'mg' : t('unit')) + '</option>'; }).join('') + '</select></label>';
+    h += '<div class="gh-row"><label>' + esc(t('f_dose')) + '<select id="ghDose">' + pen.keys.map(function (k) { return '<option value="' + k + '"' + (k === p.dose ? ' selected' : '') + '>' + esc(doseLabel(pen, k)) + '</option>'; }).join('') + '</select></label>';
     h += '<label>' + esc(t('f_start')) + '<input type="date" id="ghStart" value="' + p.start + '"></label></div>';
     h += '<div class="gh-row"><label>' + esc(t('f_k')) + '<select id="ghK">' + Array.apply(null, Array(N)).map(function (_, i) { return '<option value="' + (i + 1) + '"' + ((+p.k0 || 1) === i + 1 ? ' selected' : '') + '>' + (i + 1) + '/' + N + '</option>'; }).join('') + '</select></label>';
     h += '<label>' + esc(t('f_visit')) + '<input type="date" id="ghVisit" value="' + (p.visit || '') + '"></label></div>';
     h += '<div class="gh-row"><label>' + esc(t('f_run')) + '<select id="ghRun">' + [3, 4, 5, 6, 7].map(function (n) { return '<option value="' + n + '"' + ((+p.run || 6) === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></label></div>';
     h += '<div class="gh-hint" id="ghHint"></div>';
     h += '<div style="display:flex;gap:8px;margin-top:6px"><button class="gh-btn p" style="flex:1" data-gh="make">' + esc(t('make')) + '</button>' + (plan ? '<button class="gh-btn o" data-gh="del">' + esc(t('del')) + '</button>' : '') + '</div></details>';
-    h += '<div class="gh-note">' + esc(t('note')) + '</div>';
+    h += '<div class="gh-note">' + esc(penId === 'g2' ? t('note') : gt('gnote')) + '</div>';
     host.innerHTML = h;
     hint();
   }
