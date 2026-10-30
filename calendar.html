@@ -4909,6 +4909,23 @@ function jrdGoBack(){
     { id: 'ferring', name: '페링 (조맥톤)', re: /^zm\d+$/ }
   ];
   function coOf(pid) { for (var i = 0; i < COMPANIES.length; i++) if (COMPANIES[i].re.test(pid)) return COMPANIES[i]; return COMPANIES[0]; }
+  // 한국어가 아닌 언어에서는 회사·제품명을 영문(브랜드명)으로 표시
+  var EN_CO = { dong: 'Dong-A ST', lg: 'LG Chem', pfizer: 'Pfizer Korea', novo: 'Novo Nordisk', merck: 'Merck Korea (Saizen)', scigen: 'SciGen Korea (Scitropin)', ferring: 'Ferring (Zomacton)' };
+  var EN_PEN = {
+    g2: 'Dong-A Growtropin-II Cartridge 30IU · Growtropin-II Pen',
+    ip30: 'Dong-A Growtropin-II iPen 30IU (integrated pen)', ip20: 'Dong-A Growtropin-II iPen 20IU (integrated pen)',
+    dc20: 'Dong-A Growtropin-II Cartridge 20IU · Growtropin-II Pen',
+    es36: 'Eutropin S-Pen 36IU', ec48: 'Eutropin Cartridge 48IU · EcoPen 48 (0.5-unit basis)', eu4: 'Eutropin 4IU vial (new vial each time)',
+    gq: 'Genotropin GoQuick 36 units (12mg)', gq53: 'Genotropin GoQuick 16 units (5.3mg)',
+    gp53: 'Genotropin 16IU (5.3mg) cartridge · Genotropin Pen', gp12: 'Genotropin 12mg cartridge · Genotropin Pen',
+    nd10: 'Norditropin NordiFlex 10mg/1.5mL', nd5: 'Norditropin NordiFlex 5mg/1.5mL', nd15: 'Norditropin NordiFlex 15mg/1.5mL',
+    sz6: 'Saizen Liquid 6mg · EasyPod / Aluetta', sz12: 'Saizen Liquid 12mg · EasyPod / Aluetta', sz20: 'Saizen Liquid 20mg · EasyPod / Aluetta',
+    sc5: 'Scitropin A cartridge 5mg · Omnitrope Pen 5', sc10: 'Scitropin A cartridge 10mg · Omnitrope Pen 10', sc15: 'Scitropin A cartridge 15mg · Scitropin Pen 15',
+    gv12: 'Growtropin-II solution 12IU/1.5mL vial', gv16: 'Growtropin-II solution 16IU/2mL vial', gv4: 'Growtropin-II solution 4IU/0.5mL vial',
+    zm10: 'Zomacton 10mg (vial & syringe)', zm13: 'Zomacton 12.96IU (ZomaJet needle-free)'
+  };
+  function cname(c) { return lang() === 'ko' ? c.name : (EN_CO[c.id] || c.name); }
+  function pname(id) { return lang() === 'ko' ? PENS[id].name : (EN_PEN[id] || PENS[id].name); }
   function pensOfCo(co) { return Object.keys(PENS).filter(function (id) { return coOf(id).id === co.id; }); }
   var GT = {
     company: { ko: '회사', en: 'Company', zh: '制药公司', 'zh-TW': '製藥公司', ja: 'メーカー', vi: 'Hãng sản xuất', th: 'บริษัท', id: 'Perusahaan', es: 'Fabricante', ar: 'الشركة', mn: 'Компани' },
@@ -5054,7 +5071,7 @@ function jrdGoBack(){
     }
     var plan = load(), b = plan ? build(plan) : null, today = todayStr();
     var penId = formPen || (plan && plan.pen) || 'g2', pen = penOf(penId);
-    var subTxt = penId === 'g2' ? t('sub') : pen.name + ' · ' + t('sub').split(' · ').slice(1).join(' · ');
+    var subTxt = penId === 'g2' ? t('sub') : pname(penId) + ' · ' + t('sub').split(' · ').slice(1).join(' · ');
     var h = '<h3>' + esc(t('title')) + '</h3><div class="gh-sub">' + esc(subTxt) + '</div>';
     if (plan) {
       var ti = b.map[today], line;
@@ -5083,8 +5100,8 @@ function jrdGoBack(){
     var N = tableOf(penId, p.dose).length;
     h += '<details id="ghForm"' + (plan ? '' : ' open') + ' style="margin-top:8px"><summary style="cursor:pointer;font-weight:700;font-size:12px;color:#43555F">⚙️ ' + esc(plan ? t('edit') : t('make')) + '</summary>';
     var curCo = coOf(penId);
-    h += '<div class="gh-row"><label>' + esc(gt('company')) + '<select id="ghCo">' + COMPANIES.filter(function (c) { return pensOfCo(c).length; }).map(function (c) { return '<option value="' + c.id + '"' + (c.id === curCo.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div>';
-    if (Object.keys(PENS).length > 1) h += '<div class="gh-row"><label>' + esc(t('f_pen')) + '<select id="ghPen">' + pensOfCo(curCo).map(function (id) { return '<option value="' + id + '"' + (id === penId ? ' selected' : '') + '>' + esc(PENS[id].name) + '</option>'; }).join('') + '</select></label></div>';
+    h += '<div class="gh-row"><label>' + esc(gt('company')) + '<select id="ghCo">' + COMPANIES.filter(function (c) { return pensOfCo(c).length; }).map(function (c) { return '<option value="' + c.id + '"' + (c.id === curCo.id ? ' selected' : '') + '>' + esc(cname(c)) + '</option>'; }).join('') + '</select></label></div>';
+    if (Object.keys(PENS).length > 1) h += '<div class="gh-row"><label>' + esc(t('f_pen')) + '<select id="ghPen">' + pensOfCo(curCo).map(function (id) { return '<option value="' + id + '"' + (id === penId ? ' selected' : '') + '>' + esc(pname(id)) + '</option>'; }).join('') + '</select></label></div>';
     h += '<div class="gh-row"><label>' + esc(t('f_dose')) + '<select id="ghDose">' + pen.keys.map(function (k) { return '<option value="' + k + '"' + (k === p.dose ? ' selected' : '') + '>' + esc(doseLabel(pen, k)) + '</option>'; }).join('') + '</select></label>';
     h += '<label>' + esc(t('f_start')) + '<input type="date" id="ghStart" value="' + p.start + '"></label></div>';
     h += '<div class="gh-row"><label>' + esc(t('f_k')) + '<select id="ghK">' + Array.apply(null, Array(N)).map(function (_, i) { return '<option value="' + (i + 1) + '"' + ((+p.k0 || 1) === i + 1 ? ' selected' : '') + '>' + (i + 1) + '/' + N + '</option>'; }).join('') + '</select></label>';
