@@ -4835,6 +4835,9 @@ function jrdGoBack(){
     return TX[l] ? l : (l === 'ko' ? 'ko' : 'en');
   }
   var GT = {
+    makeup: { ko: '이번 주만 휴약일에 주사 (다음 주부터 원래 휴약일로)', en: 'This week only: injection on the usual rest day (back to normal next week)', zh: '仅本周：在原休药日注射（下周起恢复）', 'zh-TW': '僅本週：在原休藥日注射（下週起恢復）', ja: '今週だけ休薬日に注射（来週から元の休薬日に戻ります）', vi: 'Chỉ tuần này: tiêm vào ngày nghỉ thường lệ (tuần sau trở lại bình thường)', th: 'เฉพาะสัปดาห์นี้: ฉีดในวันพักตามปกติ (สัปดาห์หน้ากลับเป็นปกติ)', id: 'Hanya minggu ini: suntik di hari libur biasa (minggu depan kembali normal)', es: 'Solo esta semana: inyección en el día de descanso habitual (la próxima semana vuelve a lo normal)', ar: 'هذا الأسبوع فقط: حقنة في يوم الراحة المعتاد (يعود الجدول الأسبوع القادم)', mn: 'Зөвхөн энэ долоо хоногт: ердийн амрах өдөр тарина (дараа долоо хоногоос хэвийн)' },
+    restday: { ko: '휴약일 (쉬는 요일)', en: 'Rest day of the week', zh: '休药日（星期）', 'zh-TW': '休藥日（星期）', ja: '休薬日（曜日）', vi: 'Ngày nghỉ trong tuần', th: 'วันหยุดฉีดยา (วันในสัปดาห์)', id: 'Hari libur suntik (hari dalam minggu)', es: 'Día de descanso de la semana', ar: 'يوم الراحة الأسبوعي', mn: 'Амрах гараг' },
+    restauto: { ko: '연속 투여 일수 기준으로 자동', en: 'Automatic (after the days in a row)', zh: '按连续注射天数自动安排', 'zh-TW': '依連續注射天數自動安排', ja: '連続投与日数に従って自動', vi: 'Tự động theo số ngày liên tiếp', th: 'อัตโนมัติตามจำนวนวันฉีดต่อเนื่อง', id: 'Otomatis menurut hari berturut-turut', es: 'Automático según los días seguidos', ar: 'تلقائي حسب عدد الأيام المتتالية', mn: 'Дараалсан хоногоор автоматаар' },
     dialiu: { ko: '펜 설정: {iu}단위', en: 'Pen setting: {iu} units', zh: '笔设定：{iu}单位', 'zh-TW': '筆設定：{iu}單位', ja: 'ペン設定：{iu}単位', vi: 'Cài đặt bút: {iu} đơn vị', th: 'ตั้งปากกา: {iu} หน่วย', id: 'Atur pena: {iu} unit', es: 'Ajuste de la pluma: {iu} unidades', ar: 'ضبط القلم: {iu} وحدة', mn: 'Үзгийн тохиргоо: {iu} нэгж' },
     gnote: { ko: '제품 설명서의 다이얼 단위에 맞춰 펜(카트리지) 한 대를 남김없이 쓰도록 나눈 계산값입니다. 용량과 외래일은 담당 의사의 안내를 따라 주세요.', en: "Calculated from the product's dial increments so that one pen/cartridge is used up evenly. Follow your doctor's instructions for dose and visit date.", zh: '按产品说明书的刻度单位计算，使一支笔/药芯恰好用完。剂量和门诊日请遵医嘱。', 'zh-TW': '依產品說明書的刻度單位計算，使一支筆/藥匣剛好用完。劑量與門診日請依醫師指示。', ja: '製品説明書のダイヤル単位に基づき、ペン（カートリッジ）1本を使い切るように分けた計算値です。用量と外来日は主治医の指示に従ってください。', vi: 'Tính theo bước chỉnh liều của sản phẩm để dùng hết một bút/ống thuốc. Hãy làm theo hướng dẫn của bác sĩ về liều và ngày tái khám.', th: 'คำนวณตามหน่วยปรับของผลิตภัณฑ์ เพื่อใช้ปากกา/คาร์ทริดจ์ 1 อันให้หมดพอดี โปรดทำตามคำแนะนำของแพทย์เรื่องขนาดยาและวันนัด', id: 'Dihitung dari satuan pengaturan produk agar satu pena/kartrid habis terpakai. Ikuti arahan dokter untuk dosis dan tanggal kontrol.', es: 'Calculado según los incrementos del dial del producto para agotar una pluma/cartucho. Siga las indicaciones del médico sobre dosis y fecha de consulta.', ar: 'محسوب وفق وحدات ضبط المنتج بحيث يُستهلك قلم/خرطوشة واحدة بالكامل. اتبع تعليمات الطبيب بشأن الجرعة وموعد المراجعة.', mn: 'Бүтээгдэхүүний тохируулах нэгжид тулгуурлан нэг үзэг/картриджийг дуустал хуваасан тооцоо. Тун, үзлэгийн өдрийг эмчийнхээ зааврын дагуу авна уу.' }
   };
@@ -4862,16 +4865,18 @@ function jrdGoBack(){
   /* ───── 스케줄 계산: 못 맞은 날(skips)을 만나면 그날은 쉬고, 회차는 다음날로 그대로 이어짐 ───── */
   function build(plan) {
     var map = {}, seq = tableOf(plan.pen, plan.dose), cartSz = penOf(plan.pen).cart, N = seq.length, tot = r1(sum(seq.map(sum)));
-    var k = Math.min(Math.max(+plan.k0 || 1, 1), N), setNo = 1, streak = 0;
+    var k = Math.min(Math.max(+plan.k0 || 1, 1), N), setNo = 1, streak = 0, carry = 0, byDow = plan.restDow != null && plan.restDow !== '';
     var run = Math.max(1, +plan.run || 6);
     var end = plan.visit && plan.visit >= plan.start ? plan.visit : addDays(plan.start, 27);
     var d = plan.start, guard = 0;
     while (d <= end && guard++ < 800) {
-      if (plan.skips && plan.skips[d]) { map[d] = { t: 'skip' }; streak = 0; }
-      else if (streak >= run) { map[d] = { t: 'rest' }; streak = 0; }
+      var isRest = byDow ? parse(d).getDay() === +plan.restDow : streak >= run;
+      if (plan.skips && plan.skips[d]) { map[d] = { t: 'skip' }; streak = 0; if (byDow) carry = 1; }
+      else if (isRest && !(byDow && carry)) { map[d] = { t: 'rest' }; streak = 0; carry = 0; }
       else {
         var segs = seq[k - 1], before = sum(seq.slice(0, k - 1).map(sum));
         var mt = (META[plan.pen] || {})[plan.dose]; map[d] = { t: 'inj', mg: mt ? mt[k - 1].mg : null, iu: mt ? mt[k - 1].iu : null, dd: mt ? !!mt[k - 1].d : false, clicks: mt ? mt[k - 1].c : null, ml: mt ? (mt[k - 1].ml != null ? mt[k - 1].ml : null) : null, k: k, n: N, set: setNo, segs: segs, dose: r1(sum(segs)), split: segs.length > 1, cart: Math.floor(before / cartSz + 1e-9) + 1, newCart: k === 1 };
+        if (isRest) { map[d].mk = true; carry = 0; }
         streak++; k++;
         if (k > N) { k = 1; setNo++; }
       }
@@ -4886,7 +4891,7 @@ function jrdGoBack(){
     var past = date < todayStr();
     if (info.t === 'inj') {
       var d = info.mg != null ? info.mg + 'mg' : (info.split ? info.segs.join('+') : info.dose);
-      return '<div class="gh-chip gh-inj' + (past ? ' gh-past' : '') + (date === todayStr() ? ' gh-today' : '') + '" title="' + esc(dayText(info)) + '">💉' + info.k + '/' + info.n + '<br><b>' + d + '</b></div>';
+      return '<div class="gh-chip gh-inj' + (past ? ' gh-past' : '') + (date === todayStr() ? ' gh-today' : '') + '" title="' + esc(dayText(info)) + '">' + (info.mk ? '↩' : '💉') + info.k + '/' + info.n + '<br><b>' + d + '</b></div>';
     }
     if (info.t === 'rest') return '<div class="gh-chip gh-rest">' + esc(t('c_rest')) + '</div>';
     if (info.t === 'skip') return '<div class="gh-chip gh-skip">' + esc(t('c_skip')) + '</div>';
@@ -4896,6 +4901,7 @@ function jrdGoBack(){
   function dayText(info) {
     if (info.t !== 'inj') return '';
     var s = t('day_inj', { set: info.set, k: info.k, n: info.n, dose: info.dose });
+    if (info.mk) s += ' / ' + gt('makeup');
     if (info.split) s += ' / ' + t('split', { a: info.segs[0], b: info.segs[1] });
     else if (info.newCart) s += ' / ' + t(info.ml != null ? 'newvial' : (info.mg != null ? 'newpen' : 'newcart'));
     if (info.mg != null) s += ' / ' + (info.ml != null ? t('draw', { ml: info.ml, mg: info.mg }) : (info.dd ? gt('dialiu', { iu: info.iu }) : t('dial', { mg: info.mg, c: info.clicks })));
@@ -4988,6 +4994,9 @@ function jrdGoBack(){
     h += '<label>' + esc(t('f_start')) + '<input type="date" id="ghStart" value="' + p.start + '"></label></div>';
     h += '<div class="gh-row"><label>' + esc(t('f_k')) + '<select id="ghK">' + Array.apply(null, Array(N)).map(function (_, i) { return '<option value="' + (i + 1) + '"' + ((+p.k0 || 1) === i + 1 ? ' selected' : '') + '>' + (i + 1) + '/' + N + '</option>'; }).join('') + '</select></label>';
     h += '<label>' + esc(t('f_visit')) + '<input type="date" id="ghVisit" value="' + (p.visit || '') + '"></label></div>';
+    var wk = [], hasDow = p.restDow != null && p.restDow !== '';
+    for (var wi = 0; wi < 7; wi++) { var wl = new Date(2023, 0, 1 + wi).toLocaleDateString(lang() === 'zh' ? 'zh-CN' : lang(), { weekday: 'long' }); wk.push('<option value="' + wi + '"' + (hasDow && +p.restDow === wi ? ' selected' : '') + '>' + esc(wl) + '</option>'); }
+    h += '<div class="gh-row"><label>' + esc(gt('restday')) + '<select id="ghRestDow"><option value=""' + (hasDow ? '' : ' selected') + '>' + esc(gt('restauto')) + '</option>' + wk.join('') + '</select></label></div>';
     h += '<div class="gh-row"><label>' + esc(t('f_run')) + '<select id="ghRun">' + [3, 4, 5, 6, 7].map(function (n) { return '<option value="' + n + '"' + ((+p.run || 6) === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></label></div>';
     h += '<div class="gh-hint" id="ghHint"></div>';
     h += '<div style="display:flex;gap:8px;margin-top:6px"><button class="gh-btn p" style="flex:1" data-gh="make">' + esc(t('make')) + '</button>' + (plan ? '<button class="gh-btn o" data-gh="del">' + esc(t('del')) + '</button>' : '') + '</div></details>';
@@ -5049,7 +5058,7 @@ function jrdGoBack(){
       if (!dose || !parse(start)) { msg = '!' + t('need'); panel(); return; }
       var old = load();
       var penEl = document.getElementById('ghPen'); formPen = null;
-      save({ pen: penEl ? penEl.value : 'g2', dose: dose, start: start, k0: +document.getElementById('ghK').value || 1, visit: document.getElementById('ghVisit').value || '', run: +document.getElementById('ghRun').value || 6,
+      save({ pen: penEl ? penEl.value : 'g2', dose: dose, start: start, k0: +document.getElementById('ghK').value || 1, visit: document.getElementById('ghVisit').value || '', run: +document.getElementById('ghRun').value || 6, restDow: document.getElementById('ghRestDow').value === '' ? null : +document.getElementById('ghRestDow').value,
              skips: (old && old.dose === dose && old.start === start && (old.pen || 'g2') === (penEl ? penEl.value : 'g2')) ? (old.skips || {}) : {} });
       msg = ''; all();
       var f = document.getElementById('ghForm'); if (f) f.open = false;
