@@ -4736,6 +4736,21 @@ function jrdGoBack(){
       if (seenN[N]) continue; seenN[N] = 1;
       PENS[id].keys.push(String(T));
     }
+    // 펜 2개 묶음: 한 번은 두 펜에 걸쳐 맞는 회차가 생기는 대신 선택지가 촘촘해짐 (홀수 회수만 — 짝수는 펜 1개 묶음을 두 번 쓰는 것과 같음)
+    var C2 = g.clicks * 2;
+    for (var N2 = 5; N2 <= 41; N2 += 2) {
+      var b2 = Math.floor(C2 / N2), e2 = C2 - b2 * N2;
+      if (b2 < g.minC || b2 + (e2 ? 1 : 0) > g.maxC) continue;
+      PENS[id].keys.push('M2N' + N2);
+    }
+    PENS[id].keys.sort(function (a, b) { return avgOf(g, a) - avgOf(g, b); });
+  }
+  function avgOf(g, k) { var m = /^M(\d)N(\d+)$/.exec(k); return m ? g.clicks * g.unit * (+m[1]) / (+m[2]) : parseFloat(k); }
+  function genSeq(g, k) {   // → { N, M, list: [클릭수...] }
+    var m = /^M(\d)N(\d+)$/.exec(k), M = m ? +m[1] : 1, N = m ? +m[2] : Math.round(g.clicks * g.unit / parseFloat(k)), C = g.clicks * M;
+    var base = Math.floor(C / N), extra = C - base * N, list = [];
+    for (var i = 0; i < N; i++) list.push(base + (i >= N - extra ? 1 : 0));
+    return { N: N, M: M, list: list, base: base, extra: extra };
   }
   // ── 동아에스티 (식약처·심평원 정보 기준) ──
   // 그로트로핀투주사액 아이펜 30IU/2.7mL (급여, 일체형): 0.1IU 단위 조절, 1회 최대 8.9IU
@@ -4771,11 +4786,11 @@ function jrdGoBack(){
     if (pen.vial) return k + ' mg';
     var g = pen.gen;
     if (!g) return k + ' ' + t('unit');
-    var N = Math.round(g.clicks * g.unit / +k), base = Math.floor(g.clicks / N), extra = g.clicks - base * N;
-    var r = function (x) { return String(Math.round(x * 1000) / 1000); };
-    if (g.iu) { var l2 = base * g.unit, h2 = (base + (extra ? 1 : 0)) * g.unit; return (extra ? r(l2) + '~' + r(h2) : r(l2)) + ' ' + t('unit') + ' · ' + N + '×'; }
-    var lo = base * g.mg, hi = (base + (extra ? 1 : 0)) * g.mg;
-    return (extra ? r(lo) + '~' + r(hi) : r(lo)) + ' mg (' + (extra ? r(lo * 3).replace(/(\.\d\d)\d+/, '$1') + '~' + r(hi * 3).replace(/(\.\d\d)\d+/, '$1') : r(lo * 3)) + ' ' + t('unit') + ') · ' + N + '×';
+    var q = genSeq(g, k), N = q.N, base = q.base, extra = q.extra;
+    var r = function (x) { return String(Math.round(x * 100) / 100); };
+    var u = t('unit'), part = function (c, n) { return r(c * g.unit) + u + (g.iu ? '' : '(' + r(c * g.mg) + 'mg)') + ' ×' + n; };
+    var txt = part(base, N - extra) + (extra ? ' + ' + part(base + 1, extra) : '');
+    return (q.M > 1 ? '[' + gt('pens2') + '] ' : '') + N + '× · ' + gt('avg') + ' ' + r(g.clicks * g.unit * q.M / N) + u + ' = ' + txt;
   }
   function parseSpec(str) {
     var out = [];
@@ -4804,8 +4819,13 @@ function jrdGoBack(){
     if (!p.gen) { p.keys.forEach(function (k) { TABLES[id][k] = parseSpec(p.spec[k]); }); return; }
     var g = p.gen; META[id] = {};
     p.keys.forEach(function (k) {
-      var T = parseFloat(k), N = Math.round((g.clicks * g.unit) / T), base = Math.floor(g.clicks / N), extra = g.clicks - base * N, arr = [], meta = [];
-      for (var i = 0; i < N; i++) { var c = base + (i >= N - extra ? 1 : 0); arr.push([Math.round(c * g.unit * 1000) / 1000]); meta.push({ c: c, mg: Math.round(c * g.mg * 1000) / 1000, iu: Math.round(c * g.unit * 1000) / 1000, d: !!g.iu }); }
+      var q = genSeq(g, k), arr = [], meta = [], used = 0, rd = function (x) { return Math.round(x * 1000) / 1000; };
+      q.list.forEach(function (c) {
+        var room = g.clicks - (used % g.clicks), segs;
+        if (c > room && room > 0 && used % g.clicks !== 0) segs = [rd(room * g.unit), rd((c - room) * g.unit)]; else segs = [rd(c * g.unit)];
+        used += c; arr.push(segs);
+        meta.push({ c: c, mg: rd(c * g.mg), iu: rd(c * g.unit), d: !!g.iu });
+      });
       TABLES[id][k] = arr; META[id][k] = meta;
     });
   });
@@ -4835,6 +4855,8 @@ function jrdGoBack(){
     return TX[l] ? l : (l === 'ko' ? 'ko' : 'en');
   }
   var GT = {
+    pens2: { ko: '펜2개', en: '2 pens', zh: '2支笔', 'zh-TW': '2支筆', ja: 'ペン2本', vi: '2 bút', th: '2 ด้าม', id: '2 pena', es: '2 plumas', ar: 'قلمان', mn: '2 үзэг' },
+    avg: { ko: '평균', en: 'avg', zh: '平均', 'zh-TW': '平均', ja: '平均', vi: 'TB', th: 'เฉลี่ย', id: 'rata-rata', es: 'media', ar: 'المتوسط', mn: 'дундаж' },
     makeup: { ko: '이번 주만 휴약일에 주사 (다음 주부터 원래 휴약일로)', en: 'This week only: injection on the usual rest day (back to normal next week)', zh: '仅本周：在原休药日注射（下周起恢复）', 'zh-TW': '僅本週：在原休藥日注射（下週起恢復）', ja: '今週だけ休薬日に注射（来週から元の休薬日に戻ります）', vi: 'Chỉ tuần này: tiêm vào ngày nghỉ thường lệ (tuần sau trở lại bình thường)', th: 'เฉพาะสัปดาห์นี้: ฉีดในวันพักตามปกติ (สัปดาห์หน้ากลับเป็นปกติ)', id: 'Hanya minggu ini: suntik di hari libur biasa (minggu depan kembali normal)', es: 'Solo esta semana: inyección en el día de descanso habitual (la próxima semana vuelve a lo normal)', ar: 'هذا الأسبوع فقط: حقنة في يوم الراحة المعتاد (يعود الجدول الأسبوع القادم)', mn: 'Зөвхөн энэ долоо хоногт: ердийн амрах өдөр тарина (дараа долоо хоногоос хэвийн)' },
     restday: { ko: '휴약일 (쉬는 요일)', en: 'Rest day of the week', zh: '休药日（星期）', 'zh-TW': '休藥日（星期）', ja: '休薬日（曜日）', vi: 'Ngày nghỉ trong tuần', th: 'วันหยุดฉีดยา (วันในสัปดาห์)', id: 'Hari libur suntik (hari dalam minggu)', es: 'Día de descanso de la semana', ar: 'يوم الراحة الأسبوعي', mn: 'Амрах гараг' },
     restauto: { ko: '연속 투여 일수 기준으로 자동', en: 'Automatic (after the days in a row)', zh: '按连续注射天数自动安排', 'zh-TW': '依連續注射天數自動安排', ja: '連続投与日数に従って自動', vi: 'Tự động theo số ngày liên tiếp', th: 'อัตโนมัติตามจำนวนวันฉีดต่อเนื่อง', id: 'Otomatis menurut hari berturut-turut', es: 'Automático según los días seguidos', ar: 'تلقائي حسب عدد الأيام المتتالية', mn: 'Дараалсан хоногоор автоматаар' },
@@ -4875,7 +4897,7 @@ function jrdGoBack(){
       else if (isRest && !(byDow && carry)) { map[d] = { t: 'rest' }; streak = 0; carry = 0; }
       else {
         var segs = seq[k - 1], before = sum(seq.slice(0, k - 1).map(sum));
-        var mt = (META[plan.pen] || {})[plan.dose]; map[d] = { t: 'inj', mg: mt ? mt[k - 1].mg : null, iu: mt ? mt[k - 1].iu : null, dd: mt ? !!mt[k - 1].d : false, clicks: mt ? mt[k - 1].c : null, ml: mt ? (mt[k - 1].ml != null ? mt[k - 1].ml : null) : null, k: k, n: N, set: setNo, segs: segs, dose: r1(sum(segs)), split: segs.length > 1, cart: Math.floor(before / cartSz + 1e-9) + 1, newCart: k === 1 };
+        var mt = (META[plan.pen] || {})[plan.dose]; map[d] = { t: 'inj', mg: mt ? mt[k - 1].mg : null, iu: mt ? mt[k - 1].iu : null, dd: mt ? !!mt[k - 1].d : false, clicks: mt ? mt[k - 1].c : null, ml: mt ? (mt[k - 1].ml != null ? mt[k - 1].ml : null) : null, k: k, n: N, set: setNo, segs: segs, dose: r1(sum(segs)), split: segs.length > 1, cart: Math.floor(before / cartSz + 1e-9) + 1, newCart: k === 1 || (before > 0 && Math.abs(before / cartSz - Math.round(before / cartSz)) < 1e-6) };
         if (isRest) { map[d].mk = true; carry = 0; }
         streak++; k++;
         if (k > N) { k = 1; setNo++; }
@@ -4904,7 +4926,7 @@ function jrdGoBack(){
     if (info.mk) s += ' / ' + gt('makeup');
     if (info.split) s += ' / ' + t('split', { a: info.segs[0], b: info.segs[1] });
     else if (info.newCart) s += ' / ' + t(info.ml != null ? 'newvial' : (info.mg != null ? 'newpen' : 'newcart'));
-    if (info.mg != null) s += ' / ' + (info.ml != null ? t('draw', { ml: info.ml, mg: info.mg }) : (info.dd ? gt('dialiu', { iu: info.iu }) : t('dial', { mg: info.mg, c: info.clicks })));
+    if (info.mg != null && !info.split) s += ' / ' + (info.ml != null ? t('draw', { ml: info.ml, mg: info.mg }) : (info.dd ? gt('dialiu', { iu: info.iu }) : t('dial', { mg: info.mg, c: info.clicks })));
     return s;
   }
 
