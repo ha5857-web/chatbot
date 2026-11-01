@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script>window.JRD_BUILD='20261101a';</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>삼성자라다 성장 달력 - 터치형</title>
@@ -4721,10 +4722,25 @@ function jrdGoBack(){
    * ① spec 방식: 병원 비치 용량환산표를 그대로 옮긴 제품(동아 그로트로핀II 펜)
    * ② gen 방식: mg 다이얼 펜 — 펜 1개를 남김없이 쓰도록 전체 클릭 수를 N회(=총단위÷설정용량 반올림)에 고르게 나눔(앞쪽이 1클릭 적게)
    *    gen = { mg: 1클릭당 mg, total: 총 mg, minMg/maxMg: 1회 최소·최대 mg, step: 설정용량 간격(단위) }, 1mg = 3단위 */
+  /* ───── 제품 규격 덮어쓰기(gh-spec.json / 이 브라우저 테스트용 jrdGhSpec) ─────
+   * override: { 제품id: { name, mg, total, minMg, maxMg, step, inuse, ... } }  add: [ { id, type:'gen'|'vial', name, company, p:{...} } ] */
+  var OV = { o: {}, add: [], co: {} };
+  (function () {
+    function take(j) {
+      if (!j) return;
+      if (j.override) Object.keys(j.override).forEach(function (k) { OV.o[k] = j.override[k]; });
+      if (j.add) j.add.forEach(function (a) { if (a && a.id && a.type && a.p) { OV.add.push(a); if (a.company) OV.co[a.id] = a.company; } });
+      window.JRD_GH_SPEC_VER = j.version || 1;
+    }
+    try { if (/^https?:/.test(location.protocol)) { var x = new XMLHttpRequest(); x.open('GET', 'gh-spec.json?v=' + Math.floor(Date.now() / 600000), false); x.send(); if (x.status === 200) take(JSON.parse(x.responseText)); } } catch (e) {}
+    try { var raw = localStorage.getItem('jrdGhSpec'); if (raw) take(JSON.parse(raw)); } catch (e) {}
+  })();
+  function applyOv(o, g) { if (!o) return; Object.keys(o).forEach(function (k) { if (k !== 'name' && k !== 'company') g[k] = o[k]; }); }
   var PENS = {
     g2: { name: '동아 그로트로핀투 카트리지 30IU (비급여) · 그로트로핀-II Pen', cart: 30, inuse: 28, keys: ['2.6', '2.8', '3', '3.4', '3.8', '4.2', '4.6', '5', '5.4', '6', '6.6', '7.4'], spec: SPEC }
   };
   function addGen(id, name, g) {
+    if (OV.o[id] && OV.o[id].name) name = OV.o[id].name; applyOv(OV.o[id], g);
     g.unit = g.mg * 3; g.clicks = Math.round(g.total / g.mg); g.minC = Math.round(g.minMg / g.mg); g.maxC = Math.round(g.maxMg / g.mg);
     PENS[id] = { name: name, cart: g.total * 3, gen: g, keys: [] };
     var tot = g.clicks * g.unit, seenN = {};
@@ -4805,6 +4821,7 @@ function jrdGoBack(){
 
   // ── 바이알(주사기로 뽑는 제품) ── 매회 같은 용량, 한 바이알 = min(바이알 용량 ÷ 1회 용량, 사용기한 안의 주사 횟수)회, 남은 양은 폐기
   function addVial(id, name, v) {
+    if (OV.o[id] && OV.o[id].name) name = OV.o[id].name; applyOv(OV.o[id], v);
     // v = { iu: 단위 기준 여부, total: 바이알 용량(단위 또는 mg), conc: 1mL당(단위 또는 mg, 모르면 null), days: 첫 사용 후 사용기한, step, min, max, liquid: 액상(재조제 불필요) }
     v.maxInj = perPenMax(v.days);
     PENS[id] = { name: name, cart: v.iu ? v.total : v.total * 3, vial: v, keys: [] };
@@ -4823,6 +4840,7 @@ function jrdGoBack(){
   // 조맥톤 12.96IU(급여, 바늘 없는 조맥젯 2 비전으로 투여), 재조제 후 냉장 14일. 국내 용제량 자료 없음 → mL 대신 단위로만 표시
   addVial('zm13', '조맥톤 12.96IU (급여·조맥젯)', { iu: true, total: 12.96, conc: null, days: 14, step: 0.1, min: 0.5, max: 6.4 });
 
+  OV.add.forEach(function (a) { try { if (a.type === 'vial') addVial(a.id, a.name, Object.assign({}, a.p)); else addGen(a.id, a.name, Object.assign({}, a.p)); } catch (e) { console.error('[gh-spec]', e); } });
   function doseLabel(pen, k) {
     if (pen.vial) {
       var v = pen.vial, D = parseFloat(k), Nv = Math.min(Math.floor(v.total / D + 1e-9), v.maxInj), ml = v.conc ? Math.round(D / v.conc * 1000) / 1000 : null;
@@ -4908,7 +4926,7 @@ function jrdGoBack(){
     { id: 'scigen', name: '싸이젠코리아 (싸이트로핀)', re: /^sc\d+$/ },
     { id: 'ferring', name: '페링 (조맥톤)', re: /^zm\d+$/ }
   ];
-  function coOf(pid) { for (var i = 0; i < COMPANIES.length; i++) if (COMPANIES[i].re.test(pid)) return COMPANIES[i]; return COMPANIES[0]; }
+  function coOf(pid) { for (var i = 0; i < COMPANIES.length; i++) if (COMPANIES[i].re.test(pid) || OV.co[pid] === COMPANIES[i].id) return COMPANIES[i]; return COMPANIES[0]; }
   // 한국어가 아닌 언어에서는 회사·제품명을 영문(브랜드명)으로 표시
   var EN_CO = { dong: 'Dong-A ST', lg: 'LG Chem', pfizer: 'Pfizer Korea', novo: 'Novo Nordisk', merck: 'Merck Korea (Saizen)', scigen: 'SciGen Korea (Scitropin)', ferring: 'Ferring (Zomacton)' };
   var EN_PEN = {
@@ -4962,7 +4980,7 @@ function jrdGoBack(){
   function childId() { try { return (typeof activeChildId !== 'undefined') ? activeChildId : 1; } catch (e) { return 1; } }
   function key() { return 'jrdGhPlan_' + childId(); }
   function load() { try { var v = JSON.parse(localStorage.getItem(key()) || 'null'); return v && v.start && tableOf(v.pen, v.dose) ? v : null; } catch (e) { return null; } }
-  function save(p) { try { if (p) localStorage.setItem(key(), JSON.stringify(p)); else localStorage.removeItem(key()); } catch (e) {} }
+  function save(p) { try { if (p) localStorage.setItem(key(), JSON.stringify(p)); else localStorage.removeItem(key()); } catch (e) {} try { if (window.jrdGhExtra) window.jrdGhExtra.onSave(p); } catch (e2) {} }
 
   /* ───── 스케줄 계산: 못 맞은 날(skips)을 만나면 그날은 쉬고, 회차는 다음날로 그대로 이어짐 ───── */
   function build(plan) {
@@ -5114,6 +5132,7 @@ function jrdGoBack(){
     h += '<div style="display:flex;gap:8px;margin-top:6px"><button class="gh-btn p" style="flex:1" data-gh="make">' + esc(t('make')) + '</button>' + (plan ? '<button class="gh-btn o" data-gh="del">' + esc(t('del')) + '</button>' : '') + '</div></details>';
     h += '<div class="gh-note">' + esc(penId === 'g2' ? t('note') : gt('gnote')) + '</div>';
     host.innerHTML = h;
+    try { if (window.jrdGhExtra) { var hx = window.jrdGhExtra.html(); if (hx) host.insertAdjacentHTML('beforeend', hx); } } catch (e3) {}
     hint();
   }
   function hint() {
@@ -5204,7 +5223,7 @@ function jrdGoBack(){
     all();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-  window.jrdGh = { build: build, TABLES: TABLES, PENS: PENS };
+  window.jrdGh = { build: build, TABLES: TABLES, PENS: PENS, load: load, save: save, lang: lang, parse: parse, fmt: fmt, pad: pad, addDays: addDays, todayStr: todayStr, esc: esc, refresh: all };
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -5385,6 +5404,127 @@ function jrdGoBack(){
   function init() { css(); wrap('renderMonths', all); wrap('jrdApplyLang', all); all(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
+/* ════════════════════════════════════════════════════════════════
+ * 성장호르몬 부가 기능 — ① 약 소진 예정일 안내(처방·내원 필요) ② 펜 교체·소진 폰 알람(.ics)
+ *                      ③ 일정·못 맞음 기록을 서버에 저장(환아 앱) → 의사 앱에서 확인
+ * ════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  var G = window.jrdGh; if (!G || !G.build) return;
+  var D = {
+    ko: { sup_l: '받은 약 개수 (펜·카트리지·바이알)', sup_h: '입력하면 소진 예정일을 정확히 계산해요. 모르면 비워 두세요(현재 펜 기준).', sup_b: '저장', cur: '현재 사용 중인 펜(세트)은 {d}까지 쓸 수 있어요 (약 {n}일 남음).', all: '받은 약 {c}개는 {d}에 모두 소진돼요 ({n}일 남음).', over: '소진 예정일({d})이 지났어요. 새 약이 있는지 확인하세요.', warn: '⚠️ 약이 {n}일 뒤({d})에 떨어져요 — 처방·내원이 필요해요.', warn0: '⚠️ 약이 오늘({d}) 떨어져요 — 처방·내원이 필요해요.', early: '⚠️ 다음 외래({v})보다 {n}일 먼저 약이 떨어져요 — 외래를 앞당기거나 처방을 받으세요.', ics_b: '📅 펜 교체·소진 알람을 폰 캘린더에 추가', ics_t: '알람 시각', ics_h: '펜/카트리지 교체일과 약 소진 3일 전·1일 전·당일에 알려줘요.', pen: '💉 펜/카트리지 교체일', out: '💊 약 소진 예정 — 처방·내원 필요', none: '추가할 알람이 없어요.' },
+    en: { sup_l: 'Pens / cartridges / vials received', sup_h: 'Enter this to calculate the run-out date exactly. Leave blank to use the current pen only.', sup_b: 'Save', cur: 'Your current pen (set) lasts until {d} (about {n} days left).', all: 'All {c} supplies run out on {d} ({n} days left).', over: 'The run-out date ({d}) has passed. Check that you have new medicine.', warn: '⚠️ Medicine runs out in {n} days ({d}) — a prescription / visit is needed.', warn0: '⚠️ Medicine runs out today ({d}) — a prescription / visit is needed.', early: '⚠️ Medicine runs out {n} days before your next visit ({v}) — move the visit earlier or get a prescription.', ics_b: '📅 Add pen-change & run-out alarms to phone calendar', ics_t: 'Alarm time', ics_h: 'Alerts on pen/cartridge change days and 3 days, 1 day before and on the run-out day.', pen: '💉 Pen/cartridge change day', out: '💊 Medicine runs out — prescription / visit needed', none: 'No alarms to add.' },
+    ja: { sup_l: '受け取った薬の数（ペン・カートリッジ・バイアル）', sup_h: '入力すると消費終了日を正確に計算します。不明なら空欄（現在のペン基準）。', sup_b: '保存', cur: '現在のペン（セット）は{d}まで使えます（残り約{n}日）。', all: '受け取った薬{c}個は{d}に使い終わります（残り{n}日）。', over: '終了予定日（{d}）を過ぎました。新しい薬があるか確認してください。', warn: '⚠️ 薬があと{n}日（{d}）でなくなります — 処方・来院が必要です。', warn0: '⚠️ 薬が本日（{d}）なくなります — 処方・来院が必要です。', early: '⚠️ 次回の来院（{v}）より{n}日早く薬がなくなります。', ics_b: '📅 ペン交換・終了アラームをカレンダーに追加', ics_t: '通知時刻', ics_h: 'ペン/カートリッジ交換日と、終了の3日前・1日前・当日にお知らせします。', pen: '💉 ペン/カートリッジ交換日', out: '💊 薬の終了予定 — 処方・来院が必要', none: '追加するアラームがありません。' },
+    zh: { sup_l: '已领取的药品数量（笔·药筒·药瓶）', sup_h: '填写后可精确计算用完日期；不清楚可留空（按当前笔计算）。', sup_b: '保存', cur: '当前使用的笔（组）可用到{d}（约剩{n}天）。', all: '领取的{c}个药品将于{d}用完（剩{n}天）。', over: '预计用完日期（{d}）已过，请确认是否还有新药。', warn: '⚠️ 药品将在{n}天后（{d}）用完 — 需要处方·就诊。', warn0: '⚠️ 药品今天（{d}）用完 — 需要处方·就诊。', early: '⚠️ 药品将比下次就诊（{v}）早{n}天用完。', ics_b: '📅 将换笔·用完提醒添加到手机日历', ics_t: '提醒时间', ics_h: '在换笔/药筒日以及用完前3天、1天和当天提醒。', pen: '💉 换笔/药筒日', out: '💊 药品即将用完 — 需要处方·就诊', none: '没有可添加的提醒。' }
+  };
+  function lg() { try { return G.lang(); } catch (e) { return 'ko'; } }
+  function L(k, v) { var d = D[lg()] || D.en, s = d[k] != null ? d[k] : (D.en[k] != null ? D.en[k] : D.ko[k]); if (v) Object.keys(v).forEach(function (x) { s = s.split('{' + x + '}').join(v[x]); }); return s; }
+  function diff(a, b) { var A = G.parse(a), B = G.parse(b); return Math.round((A - B) / 86400000); }
+  function md(s) { var d = G.parse(s); return d ? (d.getMonth() + 1) + '/' + d.getDate() : s; }
+
+  // 계획 전체(오늘 + 400일)를 펼쳐서 세트(펜) 단위로 소진일을 구합니다
+  function runOut(plan) {
+    var today = G.todayStr(), far = G.addDays(today > plan.start ? today : plan.start, 400);
+    var b = G.build(Object.assign({}, plan, { visit: far })), m = b.map, d, firstSet = null, curSet = null, lastBy = {}, changes = [];
+    for (var i = 0; i < 900; i++) {
+      d = G.addDays(plan.start, i); if (d > far) break;
+      var inf = m[d]; if (!inf || inf.t !== 'inj') continue;
+      if (firstSet == null) firstSet = inf.set;
+      if (curSet == null && d >= today) curSet = inf.set;
+      lastBy[inf.set] = d;
+      if (d >= today && (inf.newCart || inf.split) && changes.length < 40 && d <= G.addDays(today, 120)) changes.push(d);
+    }
+    if (firstSet == null) return null;
+    var supply = +plan.supply > 0 ? +plan.supply : 0, target = supply ? firstSet + supply - 1 : (curSet != null ? curSet : firstSet);
+    var date = lastBy[target]; if (!date) return null;
+    return { date: date, days: diff(date, today), supply: supply, set: target, changes: changes, map: m };
+  }
+  function notice(plan, ro) {
+    if (!ro) return { text: '', bad: false };
+    var o = { d: md(ro.date), n: ro.days, c: ro.supply };
+    if (ro.days < 0) return { text: L('over', o), bad: true };
+    if (!ro.supply) return { text: L('cur', o), bad: false };   // 받은 약 개수를 모르면 경고하지 않고 현재 펜 기준 안내만
+    if (plan.visit && plan.visit >= G.todayStr() && ro.date < plan.visit) return { text: L('early', { n: diff(plan.visit, ro.date), v: md(plan.visit) }), bad: true };
+    if (ro.days === 0) return { text: L('warn0', o), bad: true };
+    if (ro.days <= 7) return { text: L('warn', o), bad: true };
+    return { text: ro.supply ? L('all', o) : L('cur', o), bad: false };
+  }
+  function html() {
+    var plan = G.load(); if (!plan) return '';
+    var ro = null; try { ro = runOut(plan); } catch (e) {}
+    var nt = notice(plan, ro), esc = G.esc, tm = ''; try { tm = localStorage.getItem('jrdGhTime') || ''; } catch (e) {}
+    var h = '<div id="ghxBox" style="margin-top:10px;padding-top:8px;border-top:1px dashed #DED5C6">';
+    if (nt.text) h += '<div style="padding:8px 10px;border-radius:8px;font-size:12.5px;font-weight:700;line-height:1.5;background:' + (nt.bad ? '#FBE9E5' : '#EAF6EF') + ';color:' + (nt.bad ? '#B24E36' : '#2E7D4F') + ';">' + esc(nt.text) + '</div>';
+    h += '<div class="gh-row"><label>' + esc(L('sup_l')) + '<input type="number" id="ghxSupply" min="1" max="30" inputmode="numeric" value="' + (+plan.supply > 0 ? +plan.supply : '') + '"></label></div>';
+    h += '<div class="gh-hint">' + esc(L('sup_h')) + '</div><button class="gh-btn o" data-ghx="supply" style="margin-top:2px">' + esc(L('sup_b')) + '</button>';
+    h += '<div class="gh-row" style="margin-top:10px"><label>' + esc(L('ics_t')) + '<input type="time" id="ghxTime" value="' + esc(tm || '08:00') + '"></label></div>';
+    h += '<button class="gh-btn p" data-ghx="ics" style="width:100%;background:#2e8b57">' + esc(L('ics_b')) + '</button><div class="gh-hint">' + esc(L('ics_h')) + '</div></div>';
+    return h;
+  }
+  function icsEsc(s) { return String(s).replace(/[\;,]/g, ' ').replace(/[\r\n]+/g, ' '); }
+  function makeIcs() {
+    var plan = G.load(); if (!plan) return;
+    var ro = runOut(plan); if (!ro) { alert(L('none')); return; }
+    var tm = (document.getElementById('ghxTime') || {}).value || '08:00'; try { localStorage.setItem('jrdGhTime', tm); } catch (e) {}
+    var hh = tm.split(':'), H = +hh[0] || 0, M = +hh[1] || 0, today = G.todayStr();
+    var stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, ''), cid = String(plan.pen) + '-' + plan.start;
+    function ev(date, summary, alarms) {
+      var ymd = date.replace(/-/g, ''), st = ymd + 'T' + G.pad(H) + G.pad(M) + '00', e = new Date(G.parse(date)); e.setHours(H, M + 30, 0, 0);
+      var en = G.fmt(e).replace(/-/g, '') + 'T' + G.pad(e.getHours()) + G.pad(e.getMinutes()) + '00', a = ['BEGIN:VEVENT', 'UID:jrd-gh-' + cid + '-' + date + '-' + icsEsc(summary).length + '@jarada', 'DTSTAMP:' + stamp, 'DTSTART:' + st, 'DTEND:' + en, 'SUMMARY:' + icsEsc(summary)];
+      alarms.forEach(function (tr) { a.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc(summary), 'TRIGGER:' + tr, 'END:VALARM'); });
+      a.push('END:VEVENT'); return a;
+    }
+    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Jarada//GH//KO', 'CALSCALE:GREGORIAN'], n = 0;
+    ro.changes.forEach(function (d) { if (d !== ro.date) { lines = lines.concat(ev(d, L('pen'), ['PT0M'])); n++; } });
+    if (ro.date >= today) { lines = lines.concat(ev(ro.date, L('out'), ['-P3D', '-P1D', 'PT0M'])); n++; }
+    lines.push('END:VCALENDAR');
+    if (!n) { alert(L('none')); return; }
+    var a2 = document.createElement('a'); a2.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(lines.join('\r\n')); a2.download = 'jarada-gh-' + today + '.ics';
+    document.body.appendChild(a2); a2.click(); a2.remove();
+  }
+
+  /* ── 서버 저장(환아 앱에서만: API·PID가 있을 때) ── 환자는 본인 행(ghPlan)만 만들고 고칠 수 있어요 */
+  function summary(plan) {
+    var today = G.todayStr(), b = G.build(Object.assign({}, plan, { visit: (plan.visit && plan.visit >= today) ? plan.visit : today })), planned = 0, skipped = 0, recent = [], d, ro = null;
+    for (var i = 0; i < 900; i++) { d = G.addDays(plan.start, i); if (d > today) break; var inf = b.map[d]; if (!inf) continue; if (inf.t === 'inj') planned++; else if (inf.t === 'skip') { skipped++; if (diff(today, d) <= 14) recent.push(d); } }
+    try { ro = runOut(plan); } catch (e) {}
+    var pen = G.PENS[plan.pen] || {};
+    return { v: 1, pen: plan.pen, penName: pen.name || plan.pen, dose: plan.dose, n: (G.TABLES[plan.pen] && G.TABLES[plan.pen][plan.dose]) ? G.TABLES[plan.pen][plan.dose].length : null, start: plan.start, visit: plan.visit || '', run: plan.run || 6, supply: +plan.supply || 0,
+      injDays: planned, skipDays: skipped, pct: (planned + skipped) ? Math.round(planned * 100 / (planned + skipped)) : null, recentSkips: recent.sort(),
+      runOut: ro ? { date: ro.date, days: ro.days } : null, updatedAt: new Date().toISOString() };
+  }
+  var timer = null;
+  function ctx() { try { var api = (typeof API !== 'undefined') ? API : '', pid = (typeof PID !== 'undefined') ? PID : ''; return (api && pid) ? { api: api, pid: pid } : null; } catch (e) { return null; } }
+  function push(plan) {
+    var c = ctx(); if (!c) return;
+    var payload = plan ? summary(plan) : { v: 1, deleted: true, updatedAt: new Date().toISOString() }, id = 'gp_' + c.pid, today = G.todayStr();
+    var post = function (body) { return fetch(c.api, { method: 'POST', body: JSON.stringify(body) }).then(function (r) { return r.json(); }).catch(function () { return null; }); };
+    post({ action: 'update', id: id, date: today, question: JSON.stringify(payload) }).then(function (res) {
+      if (res && res.status === 'ok' && res.updated) return res;
+      return post({ id: id, pid: c.pid, type: 'ghPlan', date: today, question: JSON.stringify(payload) });
+    }).then(function (res) { if (res && res.status === 'ok') { try { localStorage.setItem('ghxSync_' + c.pid, String(Date.now())); } catch (e) {} } });
+  }
+  function onSave(plan) { if (!ctx()) return; clearTimeout(timer); timer = setTimeout(function () { push(plan); }, 1500); }
+  window.jrdGhExtra = { html: html, onSave: onSave, runOut: runOut, summary: summary };
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-ghx]'); if (!b) return;
+    var a = b.getAttribute('data-ghx');
+    if (a === 'supply') {
+      var plan = G.load(); if (!plan) return;
+      var v = parseInt((document.getElementById('ghxSupply') || {}).value, 10);
+      if (v > 0) plan.supply = Math.min(v, 30); else delete plan.supply;
+      G.save(plan); if (G.refresh) G.refresh();
+    } else if (a === 'ics') makeIcs();
+  });
+  // 환아 앱: 열 때 하루 한 번(또는 12시간 이상 지났을 때) 현재 일정을 서버에 올려 의사 앱에서 볼 수 있게
+  setTimeout(function () {
+    var c = ctx(), plan = G.load(); if (!c || !plan) return;
+    var last = 0; try { last = +localStorage.getItem('ghxSync_' + c.pid) || 0; } catch (e) {}
+    if (Date.now() - last > 12 * 3600 * 1000) push(plan);
+  }, 5000);
+})();
+
 
 </script>
 </body>
