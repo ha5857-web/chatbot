@@ -1791,6 +1791,105 @@ function showMatchedVideos(nos, isFallback){
   }catch(e){}
 })();
 
+/* ═══ 성장 리포트 QR(?rv=코드): 「네이버 리뷰 참여하기」 → 리뷰 창을 닫고 돌아오면 보호자 안내서가 자동으로 열린다 ═══
+   · 코드는 아이마다 1회용(병원 flow가 리포트에 붙인 Airtable 「성장리포트」 코드). 열 때 Worker가 확인하고 사용 처리한다.
+   · 주소창의 코드는 바로 지우고 이 탭(sessionStorage)에만 잠깐 둔다.  · &v=145 가 있으면 추천 영상 버튼도 보여준다.
+   · 초진방에서 이미 리뷰 창을 다녀왔다면 &go=1 → 바로 연다.  · 이 휴대폰에 이미 열린 안내서가 있으면 코드를 쓰지 않고 그대로 연다. */
+const GQ_KEY = 'jrd_rv_pending';
+function gqGet(){ try{ return JSON.parse(sessionStorage.getItem(GQ_KEY)||'null'); }catch(e){ return null; } }
+function gqSet(x){ try{ if(x) sessionStorage.setItem(GQ_KEY, JSON.stringify(x)); else sessionStorage.removeItem(GQ_KEY); }catch(e){} }
+(function gqCapture(){
+  try{
+    const u = new URL(location.href);
+    const c = (u.searchParams.get('rv')||'').toUpperCase();
+    if(!/^[A-Z0-9]{6,12}$/.test(c)) return;
+    const v = (u.searchParams.get('v')||'').replace(/[^1-7]/g,'').slice(0,7);
+    const prev = gqGet();
+    gqSet({code:c, v:v, went: u.searchParams.get('go')==='1' ? Date.now()-5000 : (prev && prev.code===c ? prev.went||0 : 0)});
+    ['rv','v','go'].forEach(k=>u.searchParams.delete(k));
+    history.replaceState(null, '', u.pathname + (u.search||'') + location.hash);
+  }catch(e){}
+})();
+let gqBusy = false, gqState = '', gqMsg = '';
+function gqSheet(state, msg){
+  gqState = state||''; gqMsg = msg||'';
+  let el = document.getElementById('gqSheet');
+  const p = gqGet();
+  if(!p){ if(el) el.remove(); return; }
+  if(!el){
+    el = document.createElement('div'); el.id = 'gqSheet';
+    el.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:rgba(12,22,28,.55);display:flex;align-items:flex-end;justify-content:center;font-family:inherit';
+    document.body.appendChild(el);
+  }
+  const big = (id,label,bg,fg)=>'<button id="'+id+'" type="button" style="display:block;width:100%;margin-top:12px;padding:16px 14px;font-size:18px;font-weight:800;border:0;border-radius:14px;background:'+bg+';color:'+fg+';font-family:inherit;cursor:pointer">'+label+'</button>';
+  const small = t=>'<p style="margin:10px 2px 0;font-size:13px;line-height:1.6;color:#5A6B73">'+t+'</p>';
+  let body = '';
+  if(state==='busy') body = '<p style="margin:14px 2px 4px;font-size:17px;line-height:1.6">📖 안내서를 여는 중이에요…</p>';
+  else if(state==='err') body = '<p style="margin:12px 2px 0;font-size:16px;line-height:1.6;color:#B63A32">'+msg+'</p>'+big('gqRetry','다시 열기','#03C75A','#fff');
+  else if(p.went) body = '<p style="margin:12px 2px 0;font-size:16px;line-height:1.65">리뷰 참여 감사합니다! 리뷰 창을 닫고 이 화면으로 돌아오면 안내서가 <b>자동으로</b> 열려요.</p>'+big('gqOpen','📖 보호자 안내서 열기','#03C75A','#fff')+small('리뷰를 아직 못 남기셨다면 <a href="#" id="gqGoAgain" style="color:#02994A;font-weight:700">네이버 리뷰 다시 열기</a>');
+  else body = '<p style="margin:12px 2px 0;font-size:16px;line-height:1.65"><b>네이버 영수증 리뷰</b>에 참여해 주시면 「보호자 안내서」(성장·성조숙증·비만 Q&amp;A 116개)가 바로 열려요.</p>'+big('gqGo','네이버 리뷰 참여하기','#03C75A','#fff')+small('리뷰를 남기고 창을 닫으면 안내서가 자동으로 열려요 · 이 아이 전용 · 한 번만 사용');
+  if(p.v && state!=='busy') body += big('gqVid','🎬 원장님 추천 영상 보기','#EEF3F5','#14232B');
+  el.innerHTML = '<div role="dialog" aria-label="보호자 안내서" style="position:relative;width:min(520px,100%);max-height:92vh;overflow:auto;background:#fff;color:#14232B;border-radius:20px 20px 0 0;padding:22px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -6px 30px rgba(0,0,0,.18)">'+
+    '<button id="gqX" type="button" aria-label="닫기" style="position:absolute;top:10px;right:10px;width:36px;height:36px;border:0;border-radius:50%;background:#F1F4F6;font-size:18px;cursor:pointer">✕</button>'+
+    '<div style="font-size:12px;font-weight:700;color:#02994A;letter-spacing:.3px">삼성자라다 소아청소년과</div><div style="font-size:22px;font-weight:800;margin-top:2px">🎁 보호자 안내서 선물</div>'+body+'</div>';
+  const on = (id,fn)=>{ const b = document.getElementById(id); if(b) b.onclick = e=>{ e.preventDefault(); fn(); }; };
+  on('gqGo', gqGo); on('gqGoAgain', gqGo); on('gqOpen', gqUnlock); on('gqRetry', gqUnlock);
+  on('gqVid', ()=>{ const q = gqGet(); el.style.display = 'none'; try{ openVideoGuideOverlay(q && q.v || ''); }catch(e){ el.style.display = 'flex'; } });
+  on('gqX', ()=>{ gqSet(null); el.remove(); });
+}
+function gqGo(){
+  const p = gqGet(); if(!p) return;
+  p.went = Date.now(); p.err = 0; gqSet(p);
+  let w = null; try{ w = window.open(REVIEW_URL, '_blank'); }catch(e){}
+  gqSheet();
+  if(!w) location.href = REVIEW_URL;                  // 새 창이 막히면 이 탭에서 열고, 뒤로 오면 자동으로 연다
+}
+async function gqOpenWith(key){ readerHTMLCache = await readerDecryptWithKey(key); gqSet(null); gqSheet(); showReader(); }
+async function gqUnlock(){
+  const p = gqGet(); if(!p || gqBusy) return;
+  gqBusy = true; gqSheet('busy');
+  let k0 = null; try{ k0 = localStorage.getItem('jrd_reader_key'); }catch(e){}
+  if(k0){ try{ await gqOpenWith(k0); gqBusy = false; return; }catch(e){ try{ localStorage.removeItem('jrd_reader_key'); }catch(_){} } }   // 이미 열린 휴대폰 → 코드는 쓰지 않는다
+  let res = null;
+  try{
+    const r = await fetch(READER_VERIFY_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({code:p.code})});
+    res = await r.json();
+  }catch(e){ res = {ok:false, reason:'network'}; }
+  gqBusy = false;
+  const fail = m=>{ const q = gqGet(); if(q){ q.err = 1; q.msg = m; gqSet(q); } gqSheet('err', m); };
+  if(res && res.ok && res.key){
+    try{ localStorage.setItem('jrd_reader_key', res.key); localStorage.setItem('jrd_rv_done', '1'); }catch(e){}
+    try{ await gqOpenWith(res.key); }catch(e){ fail('안내서를 여는 중 문제가 생겼어요. 다시 눌러 주세요.'); }
+    return;
+  }
+  if(res && res.reason === 'already_used'){
+    let k = null; try{ k = localStorage.getItem('jrd_reader_key'); }catch(e){}
+    if(k){ try{ await gqOpenWith(k); return; }catch(e){} }
+    fail('이미 사용된 코드예요. 안내서를 처음 연 휴대폰에서 다시 열어 주세요.<br>문의 02-523-0111'); return;
+  }
+  fail(res && res.reason === 'network' ? '인터넷 연결을 확인한 뒤 다시 눌러 주세요.' : '코드를 확인하지 못했어요. 문의 02-523-0111');
+}
+function gqBack(){                                     // 리뷰 창을 닫고 돌아오면 자동으로
+  const p = gqGet(); if(!p || !p.went || p.err || gqBusy) return;
+  if(Date.now() - p.went < 2500) return;               // 창이 열리며 잠깐 생기는 전환은 무시
+  gqUnlock();
+}
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) gqBack(); });
+window.addEventListener('pageshow', ()=>setTimeout(gqBack, 200));
+window.addEventListener('focus', gqBack);
+(function gqInit(){
+  if(!gqGet()) return;
+  setTimeout(async ()=>{
+    let k = null; try{ k = localStorage.getItem('jrd_reader_key'); }catch(e){}
+    if(k){ try{ await gqOpenWith(k); return; }catch(e){ try{ localStorage.removeItem('jrd_reader_key'); }catch(_){} } }   // 이 휴대폰에 이미 열린 안내서 → 코드는 아껴 둔다
+    const q = gqGet(); if(!q) return;
+    if(!gqBusy && !document.getElementById('gqSheet')) gqSheet(q.err ? 'err' : '', q.err ? (q.msg || '다시 눌러 주세요.') : '');
+    gqBack();
+    const vg = document.getElementById('vgOv');        // 추천 영상을 닫으면 안내서 창을 다시 보여준다
+    if(vg && window.MutationObserver) new MutationObserver(()=>{ const el = document.getElementById('gqSheet'); if(el && el.style.display==='none' && !vg.classList.contains('on')) el.style.display = 'flex'; }).observe(vg, {attributes:true, attributeFilter:['class']});
+  }, 350);
+})();
+
 /* 챗봇 카드 설명 끝의 화살표는 카드 › 와 겹치므로 지운다 */
 const _applyTextBase = applyText;
 applyText = function(){ _applyTextBase(); const bd=document.getElementById('brD'); if(bd) bd.textContent = bd.textContent.replace(/\s*[→←]\s*$/,''); };
