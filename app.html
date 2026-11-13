@@ -489,7 +489,7 @@ html[dir="rtl"] .inp-wrap{flex-direction:row-reverse}
         </div>
         <div class="card-ar">›</div>
       </button>
-      <button class="card" onclick="shareSend()" id="shCard" style="display:none;">
+      <button class="card" onclick="shareSend()" id="shCard">
         <div class="card-ico">💌</div>
         <div class="card-b">
           <div class="card-t" id="shT">친구에게 보내기</div>
@@ -2005,7 +2005,6 @@ async function refReady(){
   return ok;
 }
 async function refInit(){
-  if(await refReady()){ const c = document.getElementById('shCard'); if(c) c.style.display = ''; }
   // 친구가 보낸 링크로 처음 열었을 때
   let r = null; try{ r = new URLSearchParams(location.search).get('r'); }catch(e){}
   if(r && /^[A-Za-z0-9]{8,24}$/.test(r)){
