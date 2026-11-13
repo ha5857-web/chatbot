@@ -18,6 +18,8 @@ gtag('config', 'G-JWXVM7ZSMR');
   var qr = /[?&]book=/.test(q) || /[#&]book=/.test(h);
   /* 영상 안내 링크(?v=124 / #v=124)는 병원 QR처럼 기기와 상관없이 앱(app.html)의 영상 화면으로 보냅니다 */
   if (/[?&]v=[1-7]{1,7}(&|$)/.test(q) || /^#v=[1-7]{1,7}$/.test(h)) qr = true;
+  /* 「친구에게 보내기」 링크(?r=코드)도 앱으로 보내야 친구 맛보기·보낸 사람 이용권이 기록됩니다 */
+  if (/[?&]r=[A-Za-z0-9]{8,24}(&|$)/.test(q)) qr = true;
   try { if (!qr) { if (/[?&]pc=1/.test(q)) { sessionStorage.setItem('jrd_pc', '1'); return; } if (sessionStorage.getItem('jrd_pc') === '1') return; } } catch(e) {}
   var phone = /Android.+Mobile|iPhone|iPod|Windows Phone/i.test(navigator.userAgent);
   if (phone || qr) {

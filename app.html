@@ -489,6 +489,15 @@ html[dir="rtl"] .inp-wrap{flex-direction:row-reverse}
         </div>
         <div class="card-ar">›</div>
       </button>
+      <button class="card" onclick="shareSend()" id="shCard" style="display:none;">
+        <div class="card-ico">💌</div>
+        <div class="card-b">
+          <div class="card-t" id="shT">친구에게 보내기</div>
+          <div class="card-d" id="shD">친구가 링크를 열면 보호자 안내서 7일 이용권을 드려요</div>
+          <div class="card-d" id="shStat" style="display:none;font-weight:700;"></div>
+        </div>
+        <div class="card-ar">›</div>
+      </button>
       
       
 
@@ -810,25 +819,29 @@ function rvMaybeShow(){
   go.onclick = ()=>{ rvStore('jrd_rv_day', rvToday()); };
   b.style.display = '';
 }
-let readerAPI = null;
+let readerAPI = null, readerModeLoaded = null;
 function showReader(){
   const ov = document.getElementById('readerOv');
   const host = document.getElementById('readerHost');
   const code = READER_LANG[LANG] || 'KO';
+  const rmode = readerEffMode();
+  if(readerAPI && readerModeLoaded !== rmode){ readerAPI = null; readerLangLoaded = null; }   // 맛보기 ↔ 전체가 바뀌면 다시 그림
   if(!readerAPI){
     const bd = JSON.parse(readerHTMLCache);
     const root = host.shadowRoot || host.attachShadow({mode:'open'});
     root.innerHTML = '<style>' + bd.css + '</style><div class="app" id="app">' + bd.html + '</div>';
-    readerAPI = (new Function('ROOT','HOST','DATA','INIT', bd.js))(root, host, bd.data, code);
-    readerLangLoaded = code;
+    readerAPI = (new Function('ROOT','HOST','DATA','INIT', bd.js))(root, host, rmode === 'taste' ? readerTasteData(bd.data) : bd.data, code);
+    readerLangLoaded = code; readerModeLoaded = rmode;
   } else if(readerLangLoaded !== code){
     readerAPI.openLang(code); readerLangLoaded = code;
   }
   ov.classList.add('on');
   document.body.style.overflow = 'hidden';
-  setTimeout(rvMaybeShow, 4000);   // 읽기 시작하고 잠시 뒤에 조용히 안내
+  if(rmode === 'pass') refToast(refTx('rdPass', { date: refDate(rS('jrd_reader_until')) }));
+  if(!rmode) setTimeout(rvMaybeShow, 4000);   // 읽기 시작하고 잠시 뒤에 조용히 안내 (코드로 연 분만)
 }
 async function toReader(){
+  if(readerEffMode() === 'taste'){ openReaderGate(true); return; }   // 맛보기 중이면 코드 입력 + 「맛보기 계속 읽기」
   if(readerHTMLCache){ showReader(); return; }
   try{ localStorage.removeItem('jrd_reader_pw'); }catch(e){}
   let savedKey = null; try{ savedKey = localStorage.getItem('jrd_reader_key'); }catch(e){}
@@ -838,7 +851,8 @@ async function toReader(){
   }
   openReaderGate();
 }
-function openReaderGate(){
+function openReaderGate(taste){
+  { const tb = document.getElementById('rpTaste'); if(tb) tb.style.display = taste ? '' : 'none'; }
   document.getElementById('rpInp').value = '';
   document.getElementById('rpErrBox').style.display = 'none';
   document.getElementById('readerGateOv').classList.add('on');
@@ -865,6 +879,7 @@ async function submitReaderGate(){
     if(res && res.ok && res.key){
       readerHTMLCache = await readerDecryptWithKey(res.key);
       try{ localStorage.setItem('jrd_reader_key', res.key); }catch(e){}
+      readerMarkFull();
       closeReaderGate(); showReader(); return;
     }
     if(res && res.reason === 'already_used') errEl.textContent = (T[LANG] && T[LANG].rpUsed) || '이미 사용된 코드입니다. 문의 02-523-0111';
@@ -1849,7 +1864,7 @@ async function gqOpenWith(key){ readerHTMLCache = await readerDecryptWithKey(key
 async function gqUnlock(){
   const p = gqGet(); if(!p || gqBusy) return;
   gqBusy = true; gqSheet('busy');
-  let k0 = null; try{ k0 = localStorage.getItem('jrd_reader_key'); }catch(e){}
+  let k0 = readerFullKey();
   if(k0){ try{ await gqOpenWith(k0); gqBusy = false; return; }catch(e){ try{ localStorage.removeItem('jrd_reader_key'); }catch(_){} } }   // 이미 열린 휴대폰 → 코드는 쓰지 않는다
   let res = null;
   try{
@@ -1860,11 +1875,12 @@ async function gqUnlock(){
   const fail = m=>{ const q = gqGet(); if(q){ q.err = 1; q.msg = m; gqSet(q); } gqSheet('err', m); };
   if(res && res.ok && res.key){
     try{ localStorage.setItem('jrd_reader_key', res.key); localStorage.setItem('jrd_rv_done', '1'); }catch(e){}
+    readerMarkFull();
     try{ await gqOpenWith(res.key); }catch(e){ fail('안내서를 여는 중 문제가 생겼어요. 다시 눌러 주세요.'); }
     return;
   }
   if(res && res.reason === 'already_used'){
-    let k = null; try{ k = localStorage.getItem('jrd_reader_key'); }catch(e){}
+    let k = readerFullKey();
     if(k){ try{ await gqOpenWith(k); return; }catch(e){} }
     fail('이미 사용된 코드예요. 안내서를 처음 연 휴대폰에서 다시 열어 주세요.<br>문의 02-523-0111'); return;
   }
@@ -1881,7 +1897,7 @@ window.addEventListener('focus', gqBack);
 (function gqInit(){
   if(!gqGet()) return;
   setTimeout(async ()=>{
-    let k = null; try{ k = localStorage.getItem('jrd_reader_key'); }catch(e){}
+    let k = readerFullKey();
     if(k){ try{ await gqOpenWith(k); return; }catch(e){ try{ localStorage.removeItem('jrd_reader_key'); }catch(_){} } }   // 이 휴대폰에 이미 열린 안내서 → 코드는 아껴 둔다
     const q = gqGet(); if(!q) return;
     if(!gqBusy && !document.getElementById('gqSheet')) gqSheet(q.err ? 'err' : '', q.err ? (q.msg || '다시 눌러 주세요.') : '');
@@ -1897,6 +1913,132 @@ applyText = function(){ _applyTextBase(); const bd=document.getElementById('brD'
 
 /* ══════════ 초기화 ══════════ */
 applyText();
+
+/* ═══ 친구에게 보내기 — 친구가 링크를 처음 열면 친구는 안내서 맛보기, 보낸 사람은 7일 이용권 ═══
+   링크: jaradacare.com/?r=<공유 코드>. 기록·보상은 영상추천 Apps Script(INTAKE_API_URL)의 Referral.gs가 맡습니다.
+   보낸 사람 한 명이 받을 수 있는 이용권은 3번까지, 친구 한 기기는 전체에서 한 번만 셉니다(서버에서 확인).
+   안내서 열쇠는 하나라서 맛보기·이용권 기한은 이 휴대폰에서 지키는 방식입니다(jrd_reader_mode: ''=전체, 'pass'=7일, 'taste'=맛보기). */
+const REF_I18N = {"ko": {"shT": "친구에게 보내기", "shD": "친구가 링크를 열면 보호자 안내서 7일 이용권을 드려요", "shMsg": "우리 아이 키 기록·성장 챗봇·소아과 상식까지 24시간 볼 수 있는 자라다 케어예요. 이 링크로 열면 보호자 안내서 맛보기도 볼 수 있어요.", "shCopied": "링크를 복사했어요. 카톡이나 문자에 붙여 넣어 보내 주세요.", "shPass": "🎉 친구가 링크를 열었어요! 보호자 안내서 7일 이용권이 열렸어요 ({date}까지)", "shTaste": "🎁 친구가 보내 준 자라다 케어예요. 보호자 안내서 맛보기를 열어 드렸어요.", "shStat": "친구 {n}명이 열었어요 · 이용권 {g}/{c}", "shCapDone": "이용권 3번을 모두 받았어요. 고맙습니다!", "rpTaste": "맛보기 계속 읽기", "rdPass": "7일 이용권 · {date}까지", "rdExpired": "7일 이용권이 끝났어요. 맛보기는 계속 볼 수 있어요.", "lockT": "🔒 맛보기는 여기까지예요", "lockP1": "전체 116개 문답은 병원에서 받은 이용 코드나 영수증 리뷰 이벤트 코드로 열 수 있어요.", "lockP2": "자라다 케어 첫 화면의 「친구에게 보내기」로 링크를 보내고 친구가 열면, 7일 동안 전체를 볼 수 있어요."}, "en": {"shT": "Send to a friend", "shD": "When your friend opens the link, you get a 7-day pass to the Parent Guide", "shMsg": "Jarada Care: track your child's height, ask the growth chatbot and read pediatric tips, 24 hours a day. Open this link to see a free preview of the Parent Guide.", "shCopied": "Link copied. Paste it into a chat or text message.", "shPass": "🎉 Your friend opened the link! Your 7-day Parent Guide pass is now open (until {date})", "shTaste": "🎁 A friend sent you Jarada Care. We've opened a free preview of the Parent Guide for you.", "shStat": "{n} friend(s) opened it · passes {g}/{c}", "shCapDone": "You've received all 3 passes. Thank you!", "rpTaste": "Keep reading the preview", "rdPass": "7-day pass · until {date}", "rdExpired": "Your 7-day pass has ended. You can still read the preview.", "lockT": "🔒 This is the end of the preview", "lockP1": "All 116 Q&As can be opened with a code from the clinic or the receipt review event.", "lockP2": "Send the link with “Send to a friend” on the Jarada Care home screen. When a friend opens it, you can read everything for 7 days."}, "zh": {"shT": "发送给朋友", "shD": "朋友打开链接后，您将获得家长指南7天使用权", "shMsg": "Jarada Care：24小时记录孩子身高、询问成长聊天机器人、查看儿科常识。通过此链接打开，还可以免费试读家长指南。", "shCopied": "链接已复制，请粘贴到聊天或短信中发送。", "shPass": "🎉 朋友打开了链接！家长指南7天使用权已开启（至{date}）", "shTaste": "🎁 这是朋友发给您的Jarada Care，已为您开启家长指南试读。", "shStat": "{n}位朋友已打开 · 使用权 {g}/{c}", "shCapDone": "3次使用权已全部领取，谢谢！", "rpTaste": "继续阅读试读内容", "rdPass": "7天使用权 · 至{date}", "rdExpired": "7天使用权已结束，仍可继续阅读试读内容。", "lockT": "🔒 试读到此结束", "lockP1": "全部116个问答可用医院提供的使用码或收据评价活动码开启。", "lockP2": "在Jarada Care首页用「发送给朋友」发送链接，朋友打开后，您可在7天内阅读全部内容。"}, "zh-TW": {"shT": "傳送給朋友", "shD": "朋友打開連結後，您將獲得家長指南7天使用權", "shMsg": "Jarada Care：24小時記錄孩子身高、詢問成長聊天機器人、查看兒科常識。透過此連結打開，還可以免費試讀家長指南。", "shCopied": "連結已複製，請貼到聊天或簡訊中傳送。", "shPass": "🎉 朋友打開了連結！家長指南7天使用權已開啟（至{date}）", "shTaste": "🎁 這是朋友傳給您的Jarada Care，已為您開啟家長指南試讀。", "shStat": "{n}位朋友已打開 · 使用權 {g}/{c}", "shCapDone": "3次使用權已全部領取，謝謝！", "rpTaste": "繼續閱讀試讀內容", "rdPass": "7天使用權 · 至{date}", "rdExpired": "7天使用權已結束，仍可繼續閱讀試讀內容。", "lockT": "🔒 試讀到此結束", "lockP1": "全部116個問答可用醫院提供的使用碼或收據評價活動碼開啟。", "lockP2": "在Jarada Care首頁用「傳送給朋友」傳送連結，朋友打開後，您可在7天內閱讀全部內容。"}, "ja": {"shT": "友だちに送る", "shD": "友だちがリンクを開くと、保護者ガイドの7日間利用権を差し上げます", "shMsg": "ジャラダケア：子どもの身長記録、成長チャットボット、小児科の豆知識を24時間。このリンクから開くと保護者ガイドのお試し版も読めます。", "shCopied": "リンクをコピーしました。トークやメッセージに貼り付けて送ってください。", "shPass": "🎉 友だちがリンクを開きました！保護者ガイドの7日間利用権が開きました（{date}まで）", "shTaste": "🎁 友だちから届いたジャラダケアです。保護者ガイドのお試し版を開きました。", "shStat": "{n}人が開きました · 利用権 {g}/{c}", "shCapDone": "利用権3回分をすべて受け取りました。ありがとうございます！", "rpTaste": "お試し版を読み続ける", "rdPass": "7日間利用権 · {date}まで", "rdExpired": "7日間利用権が終わりました。お試し版は引き続き読めます。", "lockT": "🔒 お試し版はここまでです", "lockP1": "116のQ&Aすべては、病院でもらった利用コードか領収書レビューイベントのコードで開けます。", "lockP2": "ジャラダケアのトップ画面「友だちに送る」でリンクを送り、友だちが開くと7日間すべて読めます。"}, "vi": {"shT": "Gửi cho bạn bè", "shD": "Khi bạn bè mở đường link, bạn nhận quyền đọc Cẩm nang phụ huynh 7 ngày", "shMsg": "Jarada Care: ghi chiều cao của con, hỏi chatbot tăng trưởng và xem kiến thức nhi khoa 24 giờ. Mở bằng link này để đọc thử Cẩm nang phụ huynh.", "shCopied": "Đã sao chép link. Hãy dán vào tin nhắn để gửi.", "shPass": "🎉 Bạn bè đã mở link! Quyền đọc Cẩm nang phụ huynh 7 ngày đã được mở (đến {date})", "shTaste": "🎁 Đây là Jarada Care do bạn bè gửi. Chúng tôi đã mở phần đọc thử Cẩm nang phụ huynh cho bạn.", "shStat": "{n} người bạn đã mở · quyền đọc {g}/{c}", "shCapDone": "Bạn đã nhận đủ 3 lần quyền đọc. Cảm ơn bạn!", "rpTaste": "Tiếp tục đọc thử", "rdPass": "Quyền đọc 7 ngày · đến {date}", "rdExpired": "Quyền đọc 7 ngày đã hết. Bạn vẫn có thể đọc phần thử.", "lockT": "🔒 Phần đọc thử kết thúc tại đây", "lockP1": "Toàn bộ 116 hỏi đáp có thể mở bằng mã do phòng khám cấp hoặc mã sự kiện đánh giá hóa đơn.", "lockP2": "Gửi link bằng nút «Gửi cho bạn bè» trên màn hình chính Jarada Care. Khi bạn bè mở link, bạn được đọc toàn bộ trong 7 ngày."}, "th": {"shT": "ส่งให้เพื่อน", "shD": "เมื่อเพื่อนเปิดลิงก์ คุณจะได้รับสิทธิ์อ่านคู่มือผู้ปกครอง 7 วัน", "shMsg": "Jarada Care: บันทึกส่วนสูงลูก ถามแชตบอตเรื่องการเจริญเติบโต และอ่านความรู้กุมารเวชได้ตลอด 24 ชั่วโมง เปิดลิงก์นี้เพื่ออ่านตัวอย่างคู่มือผู้ปกครองได้ฟรี", "shCopied": "คัดลอกลิงก์แล้ว วางในแชตหรือข้อความเพื่อส่งได้เลย", "shPass": "🎉 เพื่อนเปิดลิงก์แล้ว! เปิดสิทธิ์อ่านคู่มือผู้ปกครอง 7 วันให้แล้ว (ถึง {date})", "shTaste": "🎁 นี่คือ Jarada Care ที่เพื่อนส่งมา เราเปิดตัวอย่างคู่มือผู้ปกครองให้แล้ว", "shStat": "เพื่อนเปิดแล้ว {n} คน · สิทธิ์ {g}/{c}", "shCapDone": "คุณได้รับสิทธิ์ครบ 3 ครั้งแล้ว ขอบคุณค่ะ!", "rpTaste": "อ่านตัวอย่างต่อ", "rdPass": "สิทธิ์ 7 วัน · ถึง {date}", "rdExpired": "สิทธิ์ 7 วันหมดแล้ว ยังอ่านตัวอย่างต่อได้", "lockT": "🔒 ตัวอย่างจบเพียงเท่านี้", "lockP1": "ถามตอบทั้ง 116 ข้อเปิดได้ด้วยรหัสจากคลินิกหรือรหัสกิจกรรมรีวิวใบเสร็จ", "lockP2": "ส่งลิงก์ด้วยปุ่ม «ส่งให้เพื่อน» ที่หน้าแรกของ Jarada Care เมื่อเพื่อนเปิดลิงก์ คุณจะอ่านได้ทั้งหมดเป็นเวลา 7 วัน"}, "id": {"shT": "Kirim ke teman", "shD": "Saat teman membuka link, Anda mendapat akses 7 hari ke Panduan Orang Tua", "shMsg": "Jarada Care: catat tinggi anak, tanya chatbot pertumbuhan, dan baca info kesehatan anak 24 jam. Buka lewat link ini untuk membaca cuplikan Panduan Orang Tua.", "shCopied": "Link disalin. Tempelkan di chat atau SMS untuk dikirim.", "shPass": "🎉 Teman Anda membuka link! Akses 7 hari ke Panduan Orang Tua sudah terbuka (sampai {date})", "shTaste": "🎁 Ini Jarada Care kiriman teman Anda. Kami sudah membuka cuplikan Panduan Orang Tua untuk Anda.", "shStat": "{n} teman sudah membuka · akses {g}/{c}", "shCapDone": "Anda sudah menerima 3 akses. Terima kasih!", "rpTaste": "Lanjut baca cuplikan", "rdPass": "Akses 7 hari · sampai {date}", "rdExpired": "Akses 7 hari sudah berakhir. Cuplikan tetap bisa dibaca.", "lockT": "🔒 Cuplikan berakhir di sini", "lockP1": "Ke-116 tanya jawab bisa dibuka dengan kode dari klinik atau kode acara ulasan struk.", "lockP2": "Kirim link lewat «Kirim ke teman» di layar utama Jarada Care. Saat teman membukanya, Anda bisa membaca semuanya selama 7 hari."}, "es": {"shT": "Enviar a un amigo", "shD": "Cuando tu amigo abra el enlace, recibirás 7 días de acceso a la Guía para padres", "shMsg": "Jarada Care: registra la talla de tu hijo, pregunta al chatbot de crecimiento y lee consejos de pediatría las 24 horas. Ábrelo con este enlace para leer una muestra de la Guía para padres.", "shCopied": "Enlace copiado. Pégalo en un chat o mensaje para enviarlo.", "shPass": "🎉 ¡Tu amigo abrió el enlace! Ya tienes 7 días de acceso a la Guía para padres (hasta el {date})", "shTaste": "🎁 Un amigo te envió Jarada Care. Te hemos abierto una muestra de la Guía para padres.", "shStat": "{n} amigo(s) lo abrieron · accesos {g}/{c}", "shCapDone": "Ya recibiste los 3 accesos. ¡Gracias!", "rpTaste": "Seguir leyendo la muestra", "rdPass": "Acceso de 7 días · hasta el {date}", "rdExpired": "Tu acceso de 7 días terminó. Puedes seguir leyendo la muestra.", "lockT": "🔒 Aquí termina la muestra", "lockP1": "Las 116 preguntas completas se abren con un código de la clínica o del evento de reseña del recibo.", "lockP2": "Envía el enlace con «Enviar a un amigo» en la pantalla principal de Jarada Care. Cuando un amigo lo abra, podrás leer todo durante 7 días."}, "ar": {"shT": "أرسل إلى صديق", "shD": "عندما يفتح صديقك الرابط تحصل على اشتراك لمدة 7 أيام في دليل الوالدين", "shMsg": "جارادا كير: سجّل طول طفلك واسأل روبوت النمو واقرأ نصائح طب الأطفال على مدار 24 ساعة. افتح هذا الرابط لقراءة مقتطف مجاني من دليل الوالدين.", "shCopied": "تم نسخ الرابط. الصقه في محادثة أو رسالة لإرساله.", "shPass": "🎉 فتح صديقك الرابط! تم فتح اشتراك دليل الوالدين لمدة 7 أيام (حتى {date})", "shTaste": "🎁 هذا جارادا كير أرسله لك صديق. فتحنا لك مقتطفًا من دليل الوالدين.", "shStat": "فتحه {n} من الأصدقاء · الاشتراكات {g}/{c}", "shCapDone": "حصلت على الاشتراكات الثلاثة كلها. شكرًا لك!", "rpTaste": "متابعة قراءة المقتطف", "rdPass": "اشتراك 7 أيام · حتى {date}", "rdExpired": "انتهى اشتراك الأيام السبعة. يمكنك متابعة قراءة المقتطف.", "lockT": "🔒 ينتهي المقتطف هنا", "lockP1": "يمكن فتح الأسئلة والأجوبة الـ116 كاملة برمز من العيادة أو رمز فعالية مراجعة الإيصال.", "lockP2": "أرسل الرابط عبر «أرسل إلى صديق» في الشاشة الرئيسية لجارادا كير، وعندما يفتحه صديقك يمكنك قراءة كل شيء لمدة 7 أيام."}, "mn": {"shT": "Найздаа илгээх", "shD": "Найз тань линкийг нээхэд эцэг эхийн гарын авлагыг 7 хоног унших эрх авна", "shMsg": "Jarada Care: хүүхдийн өндрийг бүртгэх, өсөлтийн чатботоос асуух, хүүхдийн эрүүл мэндийн зөвлөгөөг 24 цаг унших. Энэ линкээр нээвэл эцэг эхийн гарын авлагын туршилтыг уншиж болно.", "shCopied": "Линкийг хууллаа. Чат эсвэл мессежид буулгаж илгээнэ үү.", "shPass": "🎉 Найз тань линкийг нээлээ! Эцэг эхийн гарын авлагын 7 хоногийн эрх нээгдлээ ({date} хүртэл)", "shTaste": "🎁 Найзын тань илгээсэн Jarada Care. Эцэг эхийн гарын авлагын туршилтыг нээж өглөө.", "shStat": "{n} найз нээсэн · эрх {g}/{c}", "shCapDone": "3 удаагийн эрхийг бүгдийг авсан. Баярлалаа!", "rpTaste": "Туршилтыг үргэлжлүүлэн унших", "rdPass": "7 хоногийн эрх · {date} хүртэл", "rdExpired": "7 хоногийн эрх дууслаа. Туршилтыг үргэлжлүүлэн уншиж болно.", "lockT": "🔒 Туршилт энд дуусна", "lockP1": "116 асуулт хариултыг бүгдийг эмнэлгээс авсан код эсвэл баримтын сэтгэгдлийн арга хэмжээний кодоор нээнэ.", "lockP2": "Jarada Care-ийн нүүр дэлгэцийн «Найздаа илгээх»-ээр линк илгээж, найз тань нээвэл 7 хоног бүгдийг уншиж болно."}};
+Object.entries(REF_I18N).forEach(([l,o])=>{ if(T[l]) Object.assign(T[l], o); });
+function rS(k,v){ try{ if(v===undefined) return localStorage.getItem(k); if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){ return null; } }
+function refRand(n){ const a='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789', b=new Uint8Array(n); crypto.getRandomValues(b); return Array.from(b, x=>a[x % a.length]).join(''); }
+function refDid(){ let d = rS('jrd_did'); if(!d || !/^[A-Za-z0-9]{12,40}$/.test(d)){ d = refRand(20); rS('jrd_did', d); } return d; }
+function refTx(k, vars){ let s = (t()[k] || T.ko[k] || ''); if(vars) Object.keys(vars).forEach(v=>{ s = s.split('{'+v+'}').join(vars[v]); }); return s; }
+function refDate(iso){ const d = new Date(iso||''); return isNaN(d) ? '' : (d.getMonth()+1) + '/' + d.getDate(); }
+async function refCall(action, r){
+  if(!INTAKE_API_URL) return null;
+  const u = INTAKE_API_URL + (INTAKE_API_URL.indexOf('?')>=0 ? '&' : '?') + 'action=' + action + '&r=' + encodeURIComponent(r) + '&d=' + encodeURIComponent(refDid());
+  try{ return await (await fetch(u, {method:'GET', redirect:'follow'})).json(); }catch(e){ return null; }
+}
+function refToast(msg){
+  if(!msg) return;
+  let el = document.getElementById('refToast');
+  if(!el){ el = document.createElement('div'); el.id = 'refToast'; el.setAttribute('role','status');
+    el.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:min(92vw,420px);background:#1D3A4A;color:#fff;padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.5;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.25);text-align:center;transition:opacity .3s';
+    document.body.appendChild(el); }
+  el.textContent = msg; el.style.opacity = '1'; el.style.display = '';
+  clearTimeout(el._t); el._t = setTimeout(()=>{ el.style.opacity = '0'; setTimeout(()=>{ el.style.display = 'none'; }, 350); }, 5200);
+}
+function readerMode(){ return rS('jrd_reader_mode') || ''; }
+function readerFullKey(){ const k = rS('jrd_reader_key'); return k && !readerMode() ? k : null; }
+function readerMarkFull(){ rS('jrd_reader_mode', null); rS('jrd_reader_until', null); }
+function readerPassExpired(){ const u = rS('jrd_reader_until'); return !u || Date.now() > new Date(u).getTime(); }
+function readerEffMode(){
+  if(!rS('jrd_reader_key')) return '';
+  const m = readerMode();
+  if(m === 'pass' && readerPassExpired()){ rS('jrd_reader_mode', 'taste'); refToast(refTx('rdExpired')); return 'taste'; }
+  return m;
+}
+function readerGrant(key, mode, until){
+  if(readerFullKey()) return false;                                        // 코드로 전체가 열린 휴대폰은 그대로
+  if(mode === 'taste' && readerMode() === 'pass' && !readerPassExpired()) return false;
+  rS('jrd_reader_key', key); rS('jrd_reader_mode', mode);
+  if(mode === 'pass') rS('jrd_reader_until', until); else rS('jrd_reader_until', null);
+  return true;
+}
+// 맛보기: 1장 앞부분(문답 10개)과 성조숙증 체크리스트, 마지막에 「맛보기는 여기까지」
+const REF_RLANG = {KO:'ko',EN:'en',ZH:'zh',TW:'zh-TW',JA:'ja',VI:'vi',TH:'th',ID:'id',ES:'es',MN:'mn',AR:'ar'};
+function readerTasteData(data){
+  return (data||[]).map(L=>{
+    const ch = L.chapters || [], first = ch[0]; if(!first) return L;
+    const blocks = []; let qn = 0;
+    for(const b of first.blocks){ if(b.t === 'q' && ++qn > 10) break; blocks.push(b); }
+    const chk = ch.find(c=>c.n === '✓');
+    const lt = REF_RLANG[L.code] || 'ko', tx = k=>(T[lt] && T[lt][k]) || T.ko[k];
+    return Object.assign({}, L, { chapters: [Object.assign({}, first, { blocks })].concat(chk ? [chk] : [], [{ n:'🔒', title: tx('lockT').replace(/^🔒\s*/, ''), blocks:[{ t:'lead', x: tx('lockP1') }, { t:'p', x: tx('lockP2') }] }]) });
+  });
+}
+async function readerTasteGo(){
+  closeReaderGate();
+  const k = rS('jrd_reader_key'); if(!k) return;
+  try{ if(!readerHTMLCache) readerHTMLCache = await readerDecryptWithKey(k); showReader(); }catch(e){ rS('jrd_reader_key', null); readerMarkFull(); }
+}
+async function shareSend(){
+  let r = rS('jrd_ref');
+  if(!r || !/^[A-Za-z0-9]{8,24}$/.test(r)){ r = refRand(10); rS('jrd_ref', r); }
+  const reg = await Promise.race([refCall('refreg', r), new Promise(res=>setTimeout(()=>res(null), 3500))]);
+  if(reg && reg.ok && reg.r && reg.r !== r){ r = reg.r; rS('jrd_ref', r); }    // 이 휴대폰에 이미 있던 링크를 계속 씀
+  rS('jrd_ref_sent', String(Date.now()));
+  const url = 'https://jaradacare.com/?r=' + r + (LANG !== 'ko' ? '&lang=' + encodeURIComponent(LANG) : '');
+  const msg = refTx('shMsg');
+  try{ if(typeof track === 'function') track('ref_share', { lang: LANG }); }catch(e){}
+  if(navigator.share){ try{ await navigator.share({ title: (t().hT || '자라다 케어'), text: msg, url }); return; }catch(e){ if(e && e.name === 'AbortError') return; } }
+  try{ await navigator.clipboard.writeText(msg + '\n' + url); refToast(refTx('shCopied')); }
+  catch(e){ window.prompt(refTx('shCopied'), url); }
+}
+function refStatRender(){
+  const el = document.getElementById('shStat'); if(!el) return;
+  let st = null; try{ st = JSON.parse(rS('jrd_ref_stat') || 'null'); }catch(e){}
+  if(!st || !st.friends){ el.style.display = 'none'; return; }
+  el.textContent = st.granted >= st.cap ? refTx('shCapDone') : refTx('shStat', { n: st.friends, g: st.granted, c: st.cap });
+  el.style.display = '';
+}
+// 서버(Referral.gs)가 아직 배포 전이면 카드를 숨겨 둡니다 — 새 서버는 모르는 링크에 not-owner, 예전 서버는 bad-input으로 답함
+async function refReady(){
+  const day = new Date().toDateString();
+  if(rS('jrd_ref_ready') === day) return true;
+  const res = await refCall('refstat', 'probe0000');
+  const ok = !!(res && (res.ok || res.reason === 'not-owner'));
+  if(ok) rS('jrd_ref_ready', day);
+  return ok;
+}
+async function refInit(){
+  if(await refReady()){ const c = document.getElementById('shCard'); if(c) c.style.display = ''; }
+  // 친구가 보낸 링크로 처음 열었을 때
+  let r = null; try{ r = new URLSearchParams(location.search).get('r'); }catch(e){}
+  if(r && /^[A-Za-z0-9]{8,24}$/.test(r)){
+    try{ const u = new URL(location.href); u.searchParams.delete('r'); history.replaceState(null, '', u.pathname + u.search + u.hash); }catch(e){}
+    if(r !== rS('jrd_ref') && rS('jrd_ref_opened') !== r){
+      const res = await refCall('refopen', r);
+      if(res && res.ok && res.key){ rS('jrd_ref_opened', r); if(readerGrant(res.key, 'taste')) refToast(refTx('shTaste')); }
+    }
+  }
+  // 내가 보낸 링크를 친구가 열었는지 (최근에 보냈으면 10분마다, 아니면 6시간마다)
+  const mine = rS('jrd_ref');
+  if(mine){
+    const sent = +(rS('jrd_ref_sent') || 0), last = +(rS('jrd_ref_chk') || 0);
+    const gap = (Date.now() - sent < 3*86400000) ? 10*60000 : 6*3600000;
+    if(Date.now() - last > gap){
+      rS('jrd_ref_chk', String(Date.now()));
+      const res = await refCall('refstat', mine);
+      if(res && res.ok){
+        rS('jrd_ref_stat', JSON.stringify({ friends: res.friends, granted: res.granted, cap: res.cap }));
+        if(res.newPass && res.key && readerGrant(res.key, 'pass', res.until)) refToast(refTx('shPass', { date: refDate(res.until) }));
+        else if(res.until && readerMode() === 'pass') rS('jrd_reader_until', res.until);
+      }
+    }
+  }
+  refStatRender();
+}
+const _applyTextRef = applyText;
+applyText = function(){
+  _applyTextRef();
+  const set = (id, k)=>{ const e = document.getElementById(id); if(e) e.textContent = refTx(k); };
+  set('shT', 'shT'); set('shD', 'shD'); set('rpTaste', 'rpTaste');
+  refStatRender();
+};
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && rS('jrd_ref')) refInit(); });
+setTimeout(()=>{ try{ applyText(); }catch(e){} refInit(); }, 700);
 </script>
   <!-- ═══ 챗봇 전체화면 오버레이 ═══ -->
   <div class="chat-ov" id="chatOv">
@@ -1941,6 +2083,7 @@ applyText();
         onkeydown="if(event.key==='Enter') submitReaderGate()">
       <div class="cal-gate-err" id="rpErrBox"><span id="rpErr">코드가 맞지 않습니다. 받은 코드를 다시 확인해 주세요</span></div>
       <button class="cal-gate-go" onclick="submitReaderGate()" id="rpGo">열기</button>
+      <button class="cal-gate-cancel" onclick="readerTasteGo()" id="rpTaste" style="display:none;font-weight:700;">맛보기 계속 읽기</button>
       <button class="cal-gate-cancel" onclick="closeReaderGate()" id="rpCancel">취소</button>
       <div class="cal-gate-tel"><span id="rpTel">코드 문의</span> <a href="tel:025230111">02-523-0111</a></div>
     </div>
