@@ -1926,7 +1926,7 @@ function refDid(){ let d = rS('jrd_did'); if(!d || !/^[A-Za-z0-9]{12,40}$/.test(
 function refTx(k, vars){ let s = (t()[k] || T.ko[k] || ''); if(vars) Object.keys(vars).forEach(v=>{ s = s.split('{'+v+'}').join(vars[v]); }); return s; }
 function refDate(iso){ const d = new Date(iso||''); return isNaN(d) ? '' : (d.getMonth()+1) + '/' + d.getDate(); }
 /* 친구공유 전용 Apps Script(자라다케어_친구공유_AppsScript.gs)를 웹 앱으로 배포한 주소. 비워 두면 카드가 숨겨집니다. */
-const REF_API_URL = '';
+const REF_API_URL = 'https://script.google.com/macros/s/AKfycbzysAy9eOMWNuvh0CEa_OLsgopPLrhbFhPmkZP4pKdZ2rHCiYh7w0DwSBiEOeeRBt209w/exec';
 async function refCall(action, r){
   if(!REF_API_URL) return null;
   const u = REF_API_URL + (REF_API_URL.indexOf('?')>=0 ? '&' : '?') + 'action=' + action + '&r=' + encodeURIComponent(r) + '&d=' + encodeURIComponent(refDid());
