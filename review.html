@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>네이버 리뷰 쓰기 — 삼성자라다</title>
+<meta name="theme-color" content="#03C75A">
+<style>
+  :root{ --g:#03C75A; --ink:#1B3A4B; --sub:#5b6b74; --bg:#f6f8f7; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; }
+  .wrap{ max-width:420px; margin:0 auto; padding:40px 16px; }
+  h1{ font-size:20px; margin:0 0 8px; }
+  p{ font-size:14px; line-height:1.7; color:var(--sub); margin:0 0 16px; }
+  a.b{ display:block; text-align:center; text-decoration:none; padding:15px 12px; border-radius:12px; font-weight:800; font-size:16px; margin-top:10px; }
+  a.main{ background:var(--g); color:#fff; }
+  a.sub{ background:#fff; color:var(--ink); border:1px solid #d6dfdb; font-weight:700; font-size:14px; }
+  .tip{ font-size:12px; color:var(--sub); margin-top:18px; line-height:1.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>네이버 영수증 리뷰 쓰기</h1>
+  <p id="msg">네이버로 이동하고 있어요…</p>
+  <a class="b main" id="app" href="#">네이버 앱에서 리뷰 쓰기</a>
+  <a class="b sub" id="web" href="#">웹 브라우저에서 리뷰 쓰기</a>
+  <p class="tip">아이폰은 <b>네이버 앱</b>에서 해야 영수증 인증이 잘 됩니다(로그인·카메라).<br>
+  네이버 앱이 없으면 「웹 브라우저에서 리뷰 쓰기」를 눌러 주세요.<br>
+  영수증 사진을 찍어 올리면 「삼성자라다 소아청소년과」를 고를 수 있어요.</p>
+</div>
+<script>
+(function(){
+  var WEB = 'https://m.place.naver.com/my/checkin';
+  var APP = 'naversearchapp://inappbrowser?url=' + encodeURIComponent(WEB) + '&target=new&version=6';
+  var ua = navigator.userAgent || '';
+  var iOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var inNaver = /NAVER\(inapp/i.test(ua);
+  document.getElementById('app').href = APP;
+  document.getElementById('web').href = WEB;
+  // 안드로이드·PC·네이버 앱 안에서는 웹 주소가 그대로 잘 열립니다.
+  if (!iOS || inNaver) { location.replace(WEB); return; }
+  // 아이폰: 네이버 앱을 먼저 열고, 앱이 없어서 이 화면이 그대로 남아 있으면 웹으로 엽니다.
+  var left = false;
+  var mark = function(){ if (document.hidden) left = true; };
+  document.addEventListener('visibilitychange', mark);
+  window.addEventListener('pagehide', function(){ left = true; });
+  location.href = APP;
+  setTimeout(function(){
+    if (left || document.hidden) { document.getElementById('msg').textContent = '네이버 앱에서 리뷰를 남긴 뒤 이 창으로 돌아와 주세요.'; return; }
+    location.replace(WEB);
+  }, 1800);
+})();
+</script>
+</body>
+</html>
