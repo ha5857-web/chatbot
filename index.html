@@ -191,9 +191,9 @@ footer{background:#0F3433;color:#B6D2CF;font-size:13px}footer .wrap{padding-top:
   <section id="info"><div class="sec-h"><h2 id="h_info"></h2></div><div class="card info" id="infoBox"></div></section>
 </div>
 
-<!-- jaradacare PC v2026.10.05-merge1 -->
+<!-- jaradacare PC v2026.11.17-manual-top -->
 <footer><div class="wrap" id="foot"></div></footer>
-<div style="background:#0F3433;color:#4d6f6c;text-align:center;font-size:11px;padding:0 0 14px" id="ver">v2026.10.05-merge1</div>
+<div style="background:#0F3433;color:#4d6f6c;text-align:center;font-size:11px;padding:0 0 14px" id="ver">v2026.11.17-manual-top</div>
 
 <div class="ov" id="modal" role="dialog" aria-modal="true"><div class="panel">
   <div class="ph"><div class="ico" id="mIco"></div><h2 id="mTitle"></h2><button class="x" id="mClose">✕</button></div>
@@ -282,13 +282,13 @@ function renderShell(){
   $('#toolGrid').innerHTML = TOOL_ORDER.map(k => `<button class="blk" data-tool="${k}"><div class="ico">${M[k].ico}</div><h3>${esc(M[k].t)}</h3><p>${esc(M[k].d)}</p><span class="go">${esc(sp('go')[0])}</span></button>`).join('');
   const go = sp('go'), bd = sp('badge');
   $('#svcGrid').innerHTML =
+    `<button class="blk" data-tool="manual"><div class="ico">▶️</div><h3>${esc(t.manualT)}</h3><p>${esc(t.manualD)}</p><span class="go">${esc(go[4])}</span></button>` +
     `<a class="blk hi" data-out="form" href="${formUrl()}" target="_blank" rel="noopener"><div class="ico">📝</div><h3>${esc(t.c0t)}</h3><p>${esc(s('svc_form'))}</p><span class="go">${esc(go[1])}</span></a>` +
     `<a class="blk" data-out="book" href="${CFG.BOOK}" target="_blank" rel="noopener"><div class="ico">🗓️</div><h3>${esc(t.bookT)}</h3><p>${esc(t.bookD)}</p><span class="go">${esc(go[2])}</span></a>` +
-    `<button class="blk" data-tool="chat"><div class="ico">🤖</div><h3>${esc(ql[1])}</h3><p>${esc(s('svc_chat'))}</p><span class="go">${esc(go[3])}</span></button>` +
     `<a class="blk" data-out="reader" href="app.html${langQ()}#reader" target="_blank" rel="noopener"><span class="badge">${esc(bd[0])}</span><div class="ico">📖</div><h3>${esc(t.rdT)}</h3><p>${esc(t.rdD)} ${esc(s('pw_note'))}</p><span class="go">${esc(go[0])}</span></a>` +
     refBlkHTML() +
     `<a class="blk" data-out="video" href="app.html${langQ()}#video" target="_blank" rel="noopener"><span class="badge">${esc(bd[1])}</span><div class="ico">🎬</div><h3>${esc(t.vidGT)}</h3><p>${esc(t.vidGD)}</p><span class="go">${esc(go[0])}</span></a>` +
-    `<button class="blk" data-tool="manual"><div class="ico">▶️</div><h3>${esc(t.manualT)}</h3><p>${esc(t.manualD)}</p><span class="go">${esc(go[4])}</span></button>` +
+    `<button class="blk" data-tool="chat"><div class="ico">🤖</div><h3>${esc(ql[1])}</h3><p>${esc(s('svc_chat'))}</p><span class="go">${esc(go[3])}</span></button>` +
     `<button class="blk" data-tool="kchat"><span class="badge">${esc(KD().gh)}</span><div class="ico">🩺</div><h3>${esc(KD().ct)}</h3><p>${esc(KD().cd)}</p><span class="go">${esc(go[3])}</span></button>` +
     `<button class="blk" data-tool="kguide"><span class="badge">${esc(KD().gh)}</span><div class="ico">📚</div><h3>${esc(KD().gt)}</h3><p>${esc(KD().gd)}</p><span class="go">${esc(go[0])}</span></button>`;
   $('#blogAll').textContent = s('blog_all');
@@ -569,7 +569,7 @@ mBody.addEventListener('click', e => {
 mBody.addEventListener('input', e => { if (e.target.id === 'cw') { S.cost.w = e.target.value; costResult(); } if (e.target.id === 'fs') { S.q = e.target.value; filterFaq(S.q); } });
 mBody.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'gc') { const b = $('[data-act="gate"]'); if (b) b.click(); } });
 
-renderShell(); setTimeout(fromHash, 150); console.log('jaradacare PC v2026.10.05-merge1');
+renderShell(); setTimeout(fromHash, 150); console.log('jaradacare PC v2026.11.17-manual-top');
 
 /* ═══ 친구에게 보내기 (PC) — 휴대폰 앱(app.html)과 같은 기록(localStorage)을 씁니다.
    링크를 친구가 열면 친구는 안내서 맛보기, 보낸 사람은 7일 이용권 — 받은 이용권은 「보호자 안내서」(app.html)를 열 때 반영됩니다. */

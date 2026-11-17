@@ -123,6 +123,9 @@ body{
 }
 .card:active{transform:scale(.985);border-color:var(--green)}
 .card-hi{border-color:var(--green);border-width:1.5px;background:linear-gradient(180deg,#fff,var(--green-lt))}
+.card-man{border-color:#FF3B30;background:#FFF1F0}
+.card-man .card-t{color:#D32F2F}
+.card-man .card-d{color:#8A5A57}
 .card-ico.hi{background:var(--green);color:#fff}
 .card-ico{
   width:38px;height:38px;border-radius:10px;background:var(--green-lt);
@@ -474,20 +477,20 @@ html[dir="rtl"] .inp-wrap{flex-direction:row-reverse}
     </div>
 
     <div class="grid">
+      <button class="card card-man" onclick="openManual()">
+        <div class="card-ico">▶️</div>
+        <div class="card-b">
+          <div class="card-t" id="manualT">사용법 안내 영상</div>
+          <div class="card-d" id="manualD">자라다 케어 사용법을 영상으로 확인하세요</div>
+        </div>
+        <div class="card-ar">›</div>
+      </button>
+
       <button class="card card-hi" onclick="openForm()">
         <div class="card-ico hi">📝</div>
         <div class="card-b">
           <div class="card-t" id="c0t">초진 기록지 미리 작성</div>
           <div class="card-d" id="c0d">미리 작성하시면 대기 시간이 줄어듭니다</div>
-        </div>
-        <div class="card-ar">›</div>
-      </button>
-
-      <button class="card" onclick="toChatbot()">
-        <div class="card-ico">🤖</div>
-        <div class="card-b">
-          <div class="card-t" id="brT">성장·성조숙증이 궁금하세요?</div>
-          <div class="card-d" id="brD">자라다 챗봇에서 150개 주제를 확인하실 수 있어요</div>
         </div>
         <div class="card-ar">›</div>
       </button>
@@ -529,6 +532,15 @@ html[dir="rtl"] .inp-wrap{flex-direction:row-reverse}
       </button>
       
       
+
+      <button class="card" onclick="toChatbot()">
+        <div class="card-ico">🤖</div>
+        <div class="card-b">
+          <div class="card-t" id="brT">성장·성조숙증이 궁금하세요?</div>
+          <div class="card-d" id="brD">자라다 챗봇에서 150개 주제를 확인하실 수 있어요</div>
+        </div>
+        <div class="card-ar">›</div>
+      </button>
 
       <div class="grid-h" id="ghKids">우리 아이 건강 상식</div>
       <button class="card" onclick="toKids('chat')">
@@ -602,14 +614,6 @@ html[dir="rtl"] .inp-wrap{flex-direction:row-reverse}
       </div>
     </button>
 
-    <button class="call manual" onclick="openManual()">
-      <div class="call-i">▶️</div>
-      <div class="call-b">
-        <div class="call-t" id="manualT">사용법 안내 영상</div>
-        <div class="call-d" id="manualD">자라다 케어 사용법을 영상으로 확인하세요</div>
-      </div>
-    </button>
-
     <button class="call book" onclick="openBook()">
       <div class="call-i">🗓️</div>
       <div class="call-b">
@@ -647,7 +651,7 @@ html[dir="rtl"] .inp-wrap{flex-direction:row-reverse}
       본 안내는 「자라다」(하재욱 저)를 기반으로 합니다.<br>
       비용은 참고용 예상치이며 실제 청구액과 다를 수 있습니다.
     </div>
-    <div style="text-align:center;font-size:9px;color:#bbb;padding-bottom:10px">v2026-10-05-merge1</div>
+    <div style="text-align:center;font-size:9px;color:#bbb;padding-bottom:10px">v2026-11-17-manual-top</div>
   </div>
 
   <!-- ═══ 보험 미리보기 ═══ -->
@@ -2511,9 +2515,9 @@ JRDTour.init(Object.assign({}, jtCommon, {
     {id:'lang',   sel:'.lang-btn', chips:true,
      extra: ()=> LANG==='en' ? '' : '<div class="jt-en">🌐 <b>English</b> — You can change the language here. Pick yours below, and the rest of this tutorial will switch to it right away.</div>'},
     {id:'form',   sel:'.card-hi'},
-    {id:'bot',    sel:'#brT',  closest:'.card'},
     {id:'cal',    sel:'#c6t',  closest:'.card'},
     {id:'reader', sel:'#rdT',  closest:'.card'},
+    {id:'bot',    sel:'#brT',  closest:'.card'},
     {id:'ins',    sel:'#c1t',  closest:'.card'},
     {id:'book',   sel:'.call.book'}
   ],
