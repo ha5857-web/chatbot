@@ -367,6 +367,15 @@ html[dir="rtl"] .inp-wrap{flex-direction:row-reverse}
   border:1px solid #ddd;border-radius:12px;background:#fff;font-family:inherit;
   font-size:15px;font-weight:700;color:#0F3B4C;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .vgLangBtn:active{background:#F2F3ED}
+.vgLangBtn{display:flex;align-items:center;gap:12px;font-weight:600;line-height:1.35}
+.vgLangBtn.on{border-color:#0E7C86;background:#EEF7F6}
+.vgThumb{width:104px;height:58px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#E9ECE6}
+.vgTx small{display:block;font-size:12px;font-weight:700;color:#0E7C86;margin-bottom:3px}
+#vgList[dir=rtl] .vgLangBtn{text-align:right}
+#vgPlayer{max-width:720px;margin:0 auto;padding:14px 16px 0;box-sizing:border-box}
+#vgVideo{display:block;width:100%;aspect-ratio:16/9;background:#000;border-radius:12px}
+#vgNow{padding:10px 2px 2px;color:#0F3B4C;font-size:15px;line-height:1.4}
+#vgNow small{display:block;font-size:12px;font-weight:700;color:#0E7C86}
 .chat-ov-finish{border:none;background:#0E7C86;color:#fff;font-family:inherit;
   font-size:12.5px;font-weight:700;padding:9px 14px;border-radius:9px;cursor:pointer;margin-right:8px}
 #ivBody{padding:20px;box-sizing:border-box;max-width:560px;margin:0 auto 60px}
@@ -651,7 +660,7 @@ html[dir="rtl"] .inp-wrap{flex-direction:row-reverse}
       본 안내는 「자라다」(하재욱 저)를 기반으로 합니다.<br>
       비용은 참고용 예상치이며 실제 청구액과 다를 수 있습니다.
     </div>
-    <div style="text-align:center;font-size:9px;color:#bbb;padding-bottom:10px">v2026-11-20-guide7</div>
+    <div style="text-align:center;font-size:9px;color:#bbb;padding-bottom:10px">v2026-11-20-guide7ml</div>
   </div>
 
   <!-- ═══ 보험 미리보기 ═══ -->
@@ -954,19 +963,24 @@ const FORM_URLS = {
 };
 function formURL(){ return FORM_URLS[LANG] || FORM_URLS.ko; }
 
-/* ── 진료 전 영상: 언어별 유튜브 링크 (한국어는 기존 코드 기반 영상 도구 그대로 사용) ── */
+/* ── 진료 전 맞춤 영상(보호자 안내 영상 7편) ──
+   한국어는 기존 코드 기반 영상 도구(VIDEO_GUIDE_HTML)를 그대로 쓰고, 그 외 10개 언어는 v/<언어>/G1~G7 파일을 재생합니다
+   (원장님 한국어 음성·아바타 + 각 언어 자막·화면 문구, 같은 이름 .jpg 표지). 유튜브 주소(youtu.be)를 넣어도 재생됩니다.
+   원본(1080p)은 구글 드라이브 '맞춤영상' 폴더에 있습니다(GUIDE_VIDEO_IDS). */
 const LANG_VIDEOS = {
-  en: ['https://youtu.be/bwLIx1dz61s','https://youtu.be/3j3Arq_W9Vw','https://youtu.be/rhYilBtxKAU','https://youtu.be/1Z2XYwMpMSY','https://youtu.be/fpCjIGAXVpw','https://youtu.be/BvZQXHMKCk8','https://youtu.be/kn_GPjp5FV8'],
-  zh: ['https://youtu.be/uDJ3KVUtdWE','https://youtu.be/eKuyEVB9nh4','https://youtu.be/JzyQUFULWbE','https://youtu.be/Sd5wNaBkJzM','https://youtu.be/a3-3x3nJJjg','https://youtu.be/Nj4-Y9PVkQU','https://youtu.be/Njulv2vyYz0'],
-  'zh-TW': ['https://youtu.be/EXjQ3t3LTV4','https://youtu.be/1Zj1OEnH5n4','https://youtu.be/R1RRX2nX55A','https://youtu.be/J_f19Cd8K0g','https://youtu.be/JpC6KMEWzVQ','https://youtu.be/h7SNHQJxd-Q','https://youtu.be/iuTOP-j_-5M'],
-  ja: ['https://youtu.be/nUj5QQr6T9w','https://youtu.be/Yux2_D3OoDI','https://youtu.be/VGfHzP2A91Q','https://youtu.be/6YypOq8E5V4','https://youtu.be/PqoIyrt0Jt4','https://youtu.be/_J-MMMfeDrA','https://youtu.be/8Gpj0X7GZKc'],
-  vi: ['https://youtu.be/1ErugWSpj7k','https://youtu.be/if8_Q-eHHOU','https://youtu.be/KwGKl1i5zo0','https://youtu.be/K7HUtX2NgZk','https://youtu.be/IhV98yVWhyY','https://youtu.be/IWZjKe3w3As','https://youtu.be/CFdRXH3bMw8'],
-  th: ['https://youtu.be/UgLETzbzN1w','https://youtu.be/rFvAM7iPPSQ','https://youtu.be/AUOkW2loVRo','https://youtu.be/61dKJbl1ud8','https://youtu.be/BIxjqg3y7MI','https://youtu.be/VPVk2WmYK88','https://youtu.be/EqTH4962R1k'],
-  id: ['https://youtu.be/aFQ6ycvL4ls','https://youtu.be/wDD3f2a4CW0','https://youtu.be/k-LVkxPw6lY','https://youtu.be/4qef8cvy8cQ','https://youtu.be/X5JcGW4s5iI','https://youtu.be/RaocHAnvLXE','https://youtu.be/N0qaI8CkbfE'],
-  es: ['https://youtu.be/ha4f_QflTPk','https://youtu.be/TQesX2MpWFU','https://youtu.be/uNxagYqB684','https://youtu.be/jx5Im5dDwIg','https://youtu.be/X5J248fudZk','https://youtu.be/qWNWVG2a97k','https://youtu.be/f0X4WZ2YAY4'],
-  ar: ['https://youtu.be/KgzxcsijjH8','https://youtu.be/-CsbcrE5UWM','https://youtu.be/PPeO3GDI8hM','https://youtu.be/EV5suey5jQo','https://youtu.be/PWyDQj8zC7I','https://youtu.be/0n8uDJ1xBHQ','https://youtu.be/h6iJCLSOSkA'],
-  mn: ['https://youtu.be/evZUz3CJTUc','https://youtu.be/MFFgwlSA7to','https://youtu.be/dka0iRluQEk','https://youtu.be/GoYVrwSnDmk','https://youtu.be/kES9slFGbpA','https://youtu.be/It8XWjh-nkU','https://youtu.be/sEaySfQGY_0']
+  "en": ["v/en/G1", "v/en/G2", "v/en/G3", "v/en/G4", "v/en/G5", "v/en/G6", "v/en/G7"],
+  "zh": ["v/zh/G1", "v/zh/G2", "v/zh/G3", "v/zh/G4", "v/zh/G5", "v/zh/G6", "v/zh/G7"],
+  "zh-TW": ["v/zh-TW/G1", "v/zh-TW/G2", "v/zh-TW/G3", "v/zh-TW/G4", "v/zh-TW/G5", "v/zh-TW/G6", "v/zh-TW/G7"],
+  "ja": ["v/ja/G1", "v/ja/G2", "v/ja/G3", "v/ja/G4", "v/ja/G5", "v/ja/G6", "v/ja/G7"],
+  "vi": ["v/vi/G1", "v/vi/G2", "v/vi/G3", "v/vi/G4", "v/vi/G5", "v/vi/G6", "v/vi/G7"],
+  "th": ["v/th/G1", "v/th/G2", "v/th/G3", "v/th/G4", "v/th/G5", "v/th/G6", "v/th/G7"],
+  "id": ["v/id/G1", "v/id/G2", "v/id/G3", "v/id/G4", "v/id/G5", "v/id/G6", "v/id/G7"],
+  "es": ["v/es/G1", "v/es/G2", "v/es/G3", "v/es/G4", "v/es/G5", "v/es/G6", "v/es/G7"],
+  "ar": ["v/ar/G1", "v/ar/G2", "v/ar/G3", "v/ar/G4", "v/ar/G5", "v/ar/G6", "v/ar/G7"],
+  "mn": ["v/mn/G1", "v/mn/G2", "v/mn/G3", "v/mn/G4", "v/mn/G5", "v/mn/G6", "v/mn/G7"]
 };
+const GUIDE_TITLES = {"en": ["Is my child growing well?", "Daily habits for healthy growth", "Why so many tests for precocious puberty?", "How does precocious puberty treatment work?", "Growth hormone: how much taller?", "Does my child need combination therapy?", "“My child gains weight just drinking water”"], "zh": ["我的孩子长得好吗？", "长得好的孩子的生活习惯", "性早熟的检查为什么这么多？", "性早熟治疗是什么原理？", "生长激素能让孩子长多高？", "联合治疗，我的孩子需要吗？", "\"我家孩子喝水都会胖\""], "zh-TW": ["我的孩子長得好嗎？", "長得好的孩子的生活習慣", "性早熟的檢查為什麼這麼多？", "性早熟治療是什麼原理？", "生長激素能讓孩子長多高？", "聯合治療，我的孩子需要嗎？", "\"我家孩子喝水都會胖\""], "ja": ["うちの子、ちゃんと育っている？", "よく育つ子の生活習慣", "思春期早発症の検査、なぜこんなに多いの？", "思春期早発症の治療、どんな仕組み？", "成長ホルモン、どれくらい伸びる？", "併用治療、うちの子に必要？", "「うちの子は水を飲んでも太るんです」"], "vi": ["Con mình có đang lớn tốt không?", "Thói quen sinh hoạt của trẻ lớn tốt", "Vì sao xét nghiệm dậy thì sớm lại nhiều như vậy?", "Điều trị dậy thì sớm hoạt động thế nào?", "Hormone tăng trưởng giúp con cao thêm bao nhiêu?", "Điều trị phối hợp, con mình có cần không?", "\"Con tôi uống nước thôi cũng béo\""], "th": ["ลูกของเราเติบโตดีหรือเปล่า?", "นิสัยการใช้ชีวิตของเด็กที่โตดี", "ทำไมการตรวจภาวะวัยรุ่นก่อนวัยถึงมีหลายอย่าง?", "การรักษาภาวะวัยรุ่นก่อนวัยทำงานอย่างไร?", "ฮอร์โมนการเจริญเติบโต ช่วยให้สูงได้แค่ไหน?", "การรักษาร่วม ลูกเราจำเป็นไหม?", "\"ลูกดื่มแค่น้ำเปล่าก็อ้วน\""], "id": ["Apakah anak kita tumbuh dengan baik?", "Kebiasaan hidup anak yang tumbuh baik", "Mengapa pemeriksaan pubertas dini begitu banyak?", "Bagaimana cara kerja terapi pubertas dini?", "Hormon pertumbuhan, seberapa tinggi bisa bertambah?", "Terapi kombinasi, apakah anak kita perlu?", "\"Anak saya minum air saja bisa gemuk\""], "es": ["¿Mi hijo está creciendo bien?", "Hábitos de los niños que crecen bien", "¿Por qué hay tantas pruebas para la pubertad precoz?", "¿Cómo funciona el tratamiento de la pubertad precoz?", "Hormona de crecimiento: ¿cuánto puede crecer?", "Tratamiento combinado: ¿lo necesita mi hijo?", "\"Mi hijo engorda hasta con agua\""], "ar": ["هل ينمو طفلنا بشكل جيد؟", "عادات الأطفال الذين ينمون جيدًا", "لماذا فحوصات البلوغ المبكر كثيرة إلى هذا الحد؟", "كيف يعمل علاج البلوغ المبكر؟", "هرمون النمو، كم يمكن أن يزيد الطول؟", "العلاج المشترك، هل يحتاجه طفلنا؟", "«طفلي يسمن حتى لو شرب الماء فقط»"], "mn": ["Манай хүүхэд сайн өсөж байна уу?", "Сайн өсдөг хүүхдийн амьдралын хэв маяг", "Бэлгийн эрт бойжилтын шинжилгээ яагаад ийм олон байдаг вэ?", "Бэлгийн эрт бойжилтын эмчилгээ хэрхэн ажилладаг вэ?", "Өсөлтийн даавар хэр өндөр болгож чадах вэ?", "Хавсарсан эмчилгээ манай хүүхдэд хэрэгтэй юу?", "\"Манай хүүхэд ус уусан ч таргалдаг\""]};
+const GUIDE_VIDEO_IDS = {"en": {"G2": "1cZzAmTYr8K_R-jAPlQZJbkxKOPgFmG9t", "G3": "1SVSwgcLSN-XLNsuKYzC9m8sndy3hjFUh", "G4": "1X_1PX0MMMYqxc_EIUsItXb4W3Ks770-w", "G5": "1mmjwalODOaa9mQ2AznssSLMFFdSKzxJ3", "G1": "1NxSWk1J7t2jiaDiRtjaBwBOT0oM7Blh8", "G6": "1K5ey8l1aHx0Cj5NSAV2HpnyndeXrQKcA", "G7": "1fEUltEaCEqOd9Gj-vrk8o0JFXLkaw8hf"}, "zh": {"G2": "1N_ri393OQuzKmbDW09KxMaJ2xxYnnMq-", "G3": "1leagweT51Ed50_hQZm-sV7xD_myGV9T2", "G5": "1NdLCXjwgVK7B4isTjOpy-q8qnk7GspVy", "G1": "1mR020WUuNSWTUZ_vWwPz0V_6hLnVYe8k", "G4": "1E8GUmbfWjH2nOoeAQglqPTOWXe7ZoKHR", "G6": "1PkHJPAoXtR1Dc9eCU-X0tceuF_T4ydmK", "G7": "11Y7v0fqvy5a_Od-9hVTcgpv1TdBIqknE"}, "zh-TW": {"G3": "1wRKoi2bUMnzQVtdUiU3qE1Bwwn9olmfh", "G2": "10ts6oWa1PxS4jIOX0kydF3TRuovtdDAw", "G1": "1r8SkAEpThpZUbkUPtYVzTCtxqz01giLi", "G5": "16KaiNNxLAUTKYP0tWxqOG9ZDx4QJ25VM", "G4": "1V53WYA3uX8rnrHej48T8PDX-yY9bI-NX", "G7": "1P9gGQoq81wpPHFUBTcUJPoTz1eFu2-n9", "G6": "1ledKIJl_qYV_LPbWkvc0ZPIloSqotZXr"}, "ja": {"G2": "1FjjF8ihBV9cYa9YxCeImADfcRWkTnyGW", "G3": "1RpLACJMYlW3Zk0QjO6mVbkOAHP-yq_MG", "G5": "1owJ3w2up-rK1Kb11Z_fqryUXk-3jGy1N", "G1": "1DaEXDo59--TB4Ro8m1gnmZodOrMglCsi", "G4": "1gYBkRr4DtoxNgRoxe2ORJa10dN9iGCJg", "G6": "1aB3LxuF5QxHTpnT6gTzYFtETZvaGbVw3", "G7": "1DlJG8aZqagdcyom1RpDku1q787lx8HHd"}, "vi": {"G2": "1tahJ4xnMRG188q0nW4at7-Ky5TvjWPMq", "G3": "1HwPMh6GQjDGk5gIUkVpkhA5EgZxCIZBq", "G4": "1jKwcq42kgSEKweAKYFd90tR-5IsDc14_", "G5": "1YTo3EyhQj0iFPNVLsd49OjcdyWeZhqjV", "G1": "1w4LP2lIhMvZn8HR4Uz2Nvny1gjm10StP", "G6": "1VJhO824mSHEGyO20-mW8qZp5xj_5FM0w", "G7": "1oD2Bn_8CjFE8OUwIEdlhZDZAXEkE4bJL"}, "th": {"G3": "10O0H_-MukbKnEtGLaFCTt8onMSqHV1NU", "G1": "1gsxfCLbuEW4Ek6a-Btp4rrAiMBK33pNI", "G5": "1TOJvux-onOGNYVsnOUzJf59SVgB6XvBM", "G4": "1rYvYEA6ydmnEDB-6Y3Js7PM1b3rYMDFt", "G2": "1of-jbmysu2-meagGTiOV8iOS7QCkIp3M", "G6": "1__fRRfWz6I_POIKj3axpK-El_FZJM7aL", "G7": "1fSjnsY8pjnKL5s7_H5_BLP7PlQnykM_r"}, "id": {"G2": "1z-KCV1ME9BkFLq0FfMoLp4quKpfibx-8", "G3": "11SG4PQhHC3042iCGaThp8Adgd-iAgI7n", "G1": "1ZZE-YRCjxk0NdrsptzIfzUfqR4VlYoS-", "G5": "1RyFcaHfFqzoAD4Uqr0SUk_OgBIhpdYpi", "G4": "1A9kl9IFwLuMn4okB9wmefDtCXkC53YYK", "G6": "1E3Lzpjd9VIykGTTdHHEime6xUMmZR2dX", "G7": "17FhiGklBBCxS3OwwDKLVZsxdZ2w4YZaa"}, "es": {"G2": "1Hs_MbHN3-hOR0NAqus1exlMbpfm1tUnS", "G3": "1lnwd41LEiElDq_JFy9g0h36G7SDEFhyu", "G1": "1goz8sogifeb8_Raq5UayiRiY3nb6TLuv", "G5": "1fRJignV1JbtWLAp2jrliHT5zz-fOOOPu", "G4": "1R95H2Ok7s_8p4453oJKetxVirQDVLPQ2", "G6": "17pjgpmG2aLjycywSJXajmcM3GWTLHu3o", "G7": "1S6sNJpWc8YB79t2n-pxePnpEgnEQOmTU"}, "ar": {"G2": "1gDjG-6tKqzmN-_1gdctmYKT9k7sN1g9Z", "G1": "1kjjorxES-DsrAltfm_vOWfo_cnxAI2vO", "G5": "1fF2E01cjtXHSV3I6nejTF9ePOu-szeVt", "G4": "1l3cYllVr-SIFNvmC828Xci-TEYzm-maw", "G6": "1TYgVcT2WTDvkjuDCBSIukmutakzdUbtq", "G3": "1t80bntc81wasJ5YKAPzxlD5P4GFlwlCG", "G7": "165Z3SFEGWeOD7HEHANtXVEiGlOaCFmOu"}, "mn": {"G3": "1s_WVMviGFBf0pAf-DR1XpoXXcflWl2GQ", "G2": "1QA2TvAgLYyGe3jE6-utQwlbzwkjh6ggl", "G5": "1hX2gGjiNLKozqwNu0Ho-31eIDnbksJKb", "G4": "13y-5iuap-u5i80Dk5mBOuk2uLRAewArj", "G6": "1KFFQH1G9ahJ88tK5UY5ST5KGU9D6wJfd", "G1": "1MstkKOMXBaVrbUyWOniAbmFFY5haQTFt", "G7": "19qNxr4HeD2BnMCcKU6ifyTMpz2PY1im5"}};
 const BOOK_URL = 'https://map.naver.com/p/entry/place/2075175246?placePath=%2Fhome&c=15.00,0,0,0,dh';
 
 function t(){ return T[LANG] || T.ko; }
@@ -1381,15 +1395,13 @@ function openVideoGuideOverlay(code){
     // 한국어 외 언어: 새로 만든 언어별 영상 목록 화면(자체 라이트박스)을 사용
     fr.style.display = 'none';
     fr.src = 'about:blank';
-    list.style.display = 'block';
+    list.style.display = 'block'; vgStop(); list.dir = (LANG === 'ar') ? 'rtl' : '';
     const nums = (code||'').split('').map(c=>parseInt(c,10)).filter(n=>n>=1&&n<=7);
     const show = nums.length ? [...new Set(nums)] : [1,2,3,4,5,6,7];
     const d = t();
     const label = d.vidGT || 'Video';
     list.innerHTML = show.map(function(n){
-      const url = langVideos[n-1];
-      if(!url) return '';
-      return '<button class="vgLangBtn" onclick="playLangVideo(\''+url+'\')">'+label+' '+n+'</button>';
+      return vgBtn(n);
     }).join('');
     ov.classList.add('on');
     document.body.style.overflow = 'hidden';
@@ -1409,16 +1421,47 @@ function openVideoGuideOverlay(code){
   document.body.style.overflow = 'hidden';
 }
 // 언어별 영상 목록에서 하나를 골랐을 때 — 목록을 감추고 그 자리에 유튜브 임베드를 채운다
-function playLangVideo(url){
+function vgBtn(n){
+  const url = (LANG_VIDEOS[LANG] || [])[n-1];
+  if(!url) return '';
+  const label = (t().vidGT) || 'Video', title = (GUIDE_TITLES[LANG] || [])[n-1] || '';
+  const thumb = /youtu/.test(url) ? '' : '<img class="vgThumb" src="'+url+'.jpg" alt="" loading="lazy">';
+  return '<button class="vgLangBtn" data-vg="'+n+'" onclick="playLangVideo(\''+url+'\','+n+')">'+thumb
+    + '<span class="vgTx"><small>'+mvEsc(label)+' '+n+'</small>'+mvEsc(title)+'</span></button>';
+}
+function vgStop(){
+  const p = document.getElementById('vgPlayer'), v = document.getElementById('vgVideo');
+  if(!p || !v) return;
+  try { v.pause(); } catch(_){}
+  v.removeAttribute('src'); v.load(); p.style.display = 'none';
+}
+function playLangVideo(url, n){
   const fr = document.getElementById('vgFrame');
   const list = document.getElementById('vgList');
-  const m = url.match(/youtu\.be\/([^?&]+)/);
-  const id = m ? m[1] : '';
-  list.style.display = 'none';
-  fr.style.display = '';
-  fr.src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&rel=0';
+  if(/youtu/.test(url)){
+    const m = url.match(/youtu\.be\/([^?&]+)/);
+    const id = m ? m[1] : '';
+    vgStop();
+    list.style.display = 'none';
+    fr.style.display = '';
+    fr.src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&rel=0';
+    return;
+  }
+  // 파일 영상: 목록 위 플레이어에서 재생하고, 목록은 그대로 두어 다른 편으로 바로 넘어갈 수 있게 한다
+  const p = document.getElementById('vgPlayer'), v = document.getElementById('vgVideo');
+  fr.style.display = 'none';
+  p.dir = (LANG === 'ar') ? 'rtl' : '';
+  p.style.display = 'block';
+  v.poster = url + '.jpg'; v.src = url + '.mp4'; v.load();
+  const pr = v.play(); if(pr && pr.catch) pr.catch(function(){});
+  const label = (t().vidGT) || 'Video', title = (GUIDE_TITLES[LANG] || [])[n-1] || '';
+  document.getElementById('vgNow').innerHTML = '<small>'+mvEsc(label)+' '+n+'</small><b>'+mvEsc(title)+'</b>';
+  list.querySelectorAll('.vgLangBtn').forEach(function(b){ b.classList.toggle('on', b.dataset.vg === String(n)); });
+  document.getElementById('vgOv').scrollTop = 0;
+  try { if (typeof gtag === 'function') gtag('event', 'guide_video_play', {lang: LANG, video: 'G' + n}); } catch(_){}
 }
 function closeVideoGuideOv(){
+  vgStop();
   const ov = document.getElementById('vgOv');
   ov.classList.remove('on');
   document.body.style.overflow = '';
@@ -1850,14 +1893,12 @@ function showMatchedVideos(nos, isFallback){
   const list = document.getElementById('vgList');
   fr.style.display = 'none';
   fr.src = 'about:blank';
-  list.style.display = 'block';
+  list.style.display = 'block'; vgStop(); list.dir = (LANG === 'ar') ? 'rtl' : '';
   const q = IVQ[LANG] || IVQ.en;
   const label = (t().vidGT) || 'Video';
   let html = isFallback ? '<p class="iv-sub" style="margin-bottom:14px">'+q.noneNote+'</p>' : '';
   html += nos.map(function(n){
-    const url = langVideos ? langVideos[n-1] : null;
-    if(!url) return '';
-    return '<button class="vgLangBtn" onclick="playLangVideo(\''+url+'\')">'+label+' '+n+'</button>';
+    return vgBtn(n);
   }).join('');
   list.innerHTML = html;
   ov.classList.add('on');
@@ -2201,6 +2242,7 @@ setTimeout(()=>{ try{ applyText(); }catch(e){} refInit(); }, 700);
     <div class="chat-ov-bar">
       <button class="chat-ov-x" onclick="closeVideoGuideOv()" aria-label="닫기">✕</button>
     </div>
+    <div id="vgPlayer" style="display:none;"><video id="vgVideo" controls playsinline preload="metadata" controlslist="nodownload"></video><div id="vgNow"></div></div>
     <div id="vgList" style="display:none;"></div>
     <iframe id="vgFrame" class="chat-ov-frame chat-ov-frame-fill" src="about:blank"
       title="맞춤 영상"></iframe>
