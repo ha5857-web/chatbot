@@ -35,6 +35,8 @@ body{font-family:var(--fn);color:var(--ink);background:var(--paper);display:flex
 .tch.on .num{background:var(--bar)}
 .tsub{display:none;padding:2px 0 10px 36px}
 .tch.on + .tsub{display:block}
+.tch.fold + .tsub{display:none}
+.tch::after{content:'▸';margin-left:auto;font-size:11px;color:#8a978a;transition:transform .15s}.tch.on:not(.fold)::after{transform:rotate(90deg)}
 .tpart{font-size:13px;font-weight:800;color:var(--bar);padding:9px 0 3px}
 .tq{display:block;font-size:12.5px;color:#4b5a58;line-height:1.45;padding:4px 8px 4px 0;text-decoration:none;cursor:pointer;border-left:2px solid transparent;padding-left:8px;margin-left:-8px}
 .tq:hover{color:var(--brand)}
@@ -108,7 +110,7 @@ toc.innerHTML = '';
 DATA.chapters.forEach((ch, ci) => {
   const row = el('div', 'tch'); row.id = 'tch' + ci;
   row.appendChild(el('span', 'num', String(ci + 1))); row.appendChild(el('span', '', ch.title));
-  row.onclick = () => { openChapter(ci); closeMenu(); };
+  row.onclick = () => { if (cur === ci && row.classList.contains('on')) { row.classList.toggle('fold'); return; } openChapter(ci); closeMenu(); };   // 열린 장을 다시 누르면 접기
   toc.appendChild(row);
   const sub = el('div', 'tsub'); let n = 0;
   ch.topics.forEach((tp, ti) => {
@@ -156,10 +158,10 @@ function renderChapter(ci){
   page.appendChild(el('div', 'foot', tr('g_foot')));
   return page;
 }
-function openChapter(ci, anchor){
-  if (cur !== ci) {
+function openChapter(ci, anchor, fold){
+  if (cur !== ci || fold != null) {
     main.innerHTML = ''; main.appendChild(renderChapter(ci));
-    document.querySelectorAll('.tch').forEach(r => r.classList.remove('on')); $('tch' + ci).classList.add('on');
+    document.querySelectorAll('.tch').forEach(r => { r.classList.remove('on'); r.classList.remove('fold'); }); $('tch' + ci).classList.add('on'); if (fold) $('tch' + ci).classList.add('fold');   // 처음 열었을 때는 목차를 모두 접어 둠
     cur = ci; main.scrollTop = 0; watch();
   }
   if (anchor) { const t = $(anchor); if (t) main.scrollTo({top: t.offsetTop - 6, behavior: 'auto'}); }
@@ -234,7 +236,7 @@ function alert0(m){ res.innerHTML = ''; res.appendChild(el('div', 'ri none', m))
   const h = decodeURIComponent(location.hash.replace('#', '')); let ci = 0;
   const m = h.match(/^(?:q|part)-(\d+)-/); if (m) ci = +m[1]; const c = h.match(/^c(\d+)$/); if (c) ci = +c[1];
   buildToc(); buildIdx(); applyLang();
-  openChapter(Math.min(ci, DATA.chapters.length - 1), m ? h : null);
+  openChapter(Math.min(ci, DATA.chapters.length - 1), m ? h : null, !m);
   let want = 'ko';
   try { const p = ({'zh-TW':'zt','zh-tw':'zt','zh-Hant':'zt'})[new URLSearchParams(location.search).get('lang')] || new URLSearchParams(location.search).get('lang'), st = localStorage.getItem('jpl_lang'); want = (p && UIS[p]) ? p : (st && UIS[st]) ? st : 'ko'; } catch (e) {}
   if (want !== 'ko') setLang(want);
