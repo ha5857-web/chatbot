@@ -862,6 +862,28 @@ function rvMaybeShow(){
   b.style.display = '';
 }
 let readerAPI = null, readerModeLoaded = null;
+/* 전자책 목차: 처음 열면 큰 목차(장)만 보이게 — 열린 장의 세부 목록(Part·Q)을 접어 두고, 그 장을 누르면 펼치고 다시 누르면 접습니다.
+   본문 묶음(암호화)의 구조를 건드리지 않도록, 「Q숫자」 항목들을 품은 목록을 바로 뒤에 둔 줄을 장 줄로 알아봅니다. */
+function readerTocSub(row){ const n = row && row.nextElementSibling; if(!n) return null; let q = 0; n.querySelectorAll('*').forEach(e => { if(!e.children.length && /^\s*Q\s?\d+[.)]/.test(e.textContent||'')) q++; }); return q >= 2 ? n : null; }
+function readerTocRows(root){ const out = []; if(!root) return out; root.querySelectorAll('*').forEach(e => { const n = e.nextElementSibling; if(n && e.children.length <= 4 && (e.textContent||'').length < 80 && readerTocSub(e)) out.push(e); }); return out; }
+function readerFoldToc(root){
+  if(!root) return;
+  const run = () => {
+    const rows = readerTocRows(root); if(!rows.length) return false;
+    rows.forEach(r => { const sub = r.nextElementSibling; sub.style.display = 'none'; r.dataset.jrdFold = '1'; });
+    return true;
+  };
+  setTimeout(() => { if(!run()) setTimeout(run, 400); }, 0);
+  if(root.__jrdFoldWired) return; root.__jrdFoldWired = true;
+  root.addEventListener('click', ev => {
+    const rows = readerTocRows(root); const row = rows.find(r => r.contains(ev.target)); if(!row) return;
+    const sub = row.nextElementSibling, shown = sub.style.display !== 'none' && getComputedStyle(sub).display !== 'none';
+    if(shown){ sub.style.display = 'none'; row.dataset.jrdFold = '1'; ev.stopPropagation(); ev.preventDefault(); return; }   // 펼친 장을 다시 누르면 접기
+    rows.forEach(r => { if(r !== row && r.nextElementSibling){ r.nextElementSibling.style.display = 'none'; r.dataset.jrdFold = '1'; } });
+    sub.style.display = ''; delete row.dataset.jrdFold;   // 누른 장만 펼침 (본문 이동은 원래대로)
+    setTimeout(() => { if(getComputedStyle(sub).display === 'none') sub.style.display = 'block'; }, 0);
+  }, true);
+}
 function showReader(){
   const ov = document.getElementById('readerOv');
   const host = document.getElementById('readerHost');
@@ -874,8 +896,10 @@ function showReader(){
     root.innerHTML = '<style>' + bd.css + '</style><div class="app" id="app">' + bd.html + '</div>';
     readerAPI = (new Function('ROOT','HOST','DATA','INIT', bd.js))(root, host, rmode === 'taste' ? readerTasteData(bd.data) : bd.data, code);
     readerLangLoaded = code; readerModeLoaded = rmode;
+    readerFoldToc(root);
   } else if(readerLangLoaded !== code){
     readerAPI.openLang(code); readerLangLoaded = code;
+    readerFoldToc(host.shadowRoot);
   }
   ov.classList.add('on');
   document.body.style.overflow = 'hidden';
